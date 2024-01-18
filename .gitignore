@@ -1,2 +1,6 @@
 /Manifest.toml
 ./vscode/
+./Results/
+./CSV_Files/
+./Configurations/
+./run/
