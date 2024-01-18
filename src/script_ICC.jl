@@ -3,16 +3,16 @@ using RiFyFi
 using Infiltrator
 using RFImpairmentsModels 
 
-include("Augmentation.jl/src/Augmentation.jl")
+include("Augmentation/src/Augmentation.jl")
 using .Augmentation
 
-include("RiFyFi_VDG.jl/src/RiFyFi_VDG.jl")
+include("RiFyFi_VDG/src/RiFyFi_VDG.jl")
 using .RiFyFi_VDG
 
-include("RiFyFi_IdF.jl/src/RiFyFi_IdF.jl")
+include("RiFyFi_IdF/src/RiFyFi_IdF.jl")
 using .RiFyFi_IdF
 
-include("Results.jl/src/Results.jl")
+include("Results/src/Results.jl")
 using .Results
 
 #=

@@ -16,7 +16,7 @@ using Statistics
 using CSV 
 using DelimitedFiles
 using DataFrames
-include("../../Augmentation.jl/src/Augmentation.jl")
+include("../../Augmentation/src/Augmentation.jl")
 using .Augmentation
 # ----------------------------------------------------
 # --- Export 
