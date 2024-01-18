@@ -4,5 +4,5 @@ Results/
 CSV_Files/
 Configurations/
 run/
-script_ICC.jl
-script.jl
+src/script_ICC.jl
+src/script.jl
