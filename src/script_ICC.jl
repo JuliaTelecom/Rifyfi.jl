@@ -240,7 +240,7 @@ for i =1: 1 :size(Table_nb_Augment,1)
     Seed_Network= Table_Seed_Network[k]
     Train_args = RiFyFi_IdF.Args(η = η ,dr=dr, epochs= epochs,batchsize=batchsize)
     Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSignals,Seed_Network,Train_args) 
-    savepathbson = RiFyFi.main(Param_Data,Param_Network)   #filename is the .pkl file    
+    RiFyFi.main(Param_Data,Param_Network)   #filename is the .pkl file    
     end 
     
     nameTable = [name]
