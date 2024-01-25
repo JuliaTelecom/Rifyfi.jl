@@ -47,7 +47,7 @@ export getAccuracy
 
 """ Function that drives the cnn and saves it in .bson\n
     Parameters : 
-    - Param_Data type Data_Synth ou Data_WiSig 
+    - Param_Data type Data_Synth  
     - Param_Network type of Network_struct 
 """
 function main(Param_Data,Param_Network)  
@@ -59,15 +59,13 @@ function main(Param_Data,Param_Network)
     end
 
     (dataTrain,dataTest) = init(Param_Data,Param_Network)
-    if Param_Data.name== "WiSig"
-        savepath = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.nbSignals)/$(hardware)"
-    elseif Param_Data.Augmentation_Value.augmentationType == "sans"
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
         savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
     else 
         savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
     end 
     !ispath(savepath) && mkpath(savepath)
-    
+    @infiltrate
     (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # ----------------------------------------------------
     # --- Saving model 
@@ -85,7 +83,7 @@ end
 
 """ Function that load Data in Matrix format and initialize the Network
     Parameters : 
-    - Param_Data type Data_Synth ou Data_WiSig 
+    - Param_Data type Data_Synth 
     - Param_Network type of Network_struct
 """
 function init(Param_Data,Param_Network)
@@ -94,11 +92,9 @@ function init(Param_Data,Param_Network)
     # ---------------------------------------------------- 
     @info "init"
     Random.seed!(Param_Network.Seed_Network)
-    if Param_Data.name== "WiSig"
-        (X_train,Y_train,X_test,Y_test)=loadCSV_WiSig(Param_Data)
-    else
-        (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
-    end 
+    
+    (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
+    
 
     # ----------------------------------------------------
     # --- Create datasets

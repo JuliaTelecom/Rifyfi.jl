@@ -16,6 +16,7 @@ using Statistics
 using CSV 
 using DelimitedFiles
 using DataFrames
+using Infiltrator
 include("../../Augmentation/src/Augmentation.jl")
 using .Augmentation
 # ----------------------------------------------------
@@ -60,8 +61,8 @@ function setSynthetiquecsv(Param_Data)
     (bigMatTrain,bigLabel_Train,bigMatTest,bigLabel_Test,X) = create_virtual_Database(Param_Data)
     bigLabels_Train = create_bigMat_Labels_Tx(bigLabel_Train)
     bigLabels_Test = create_bigMat_Labels_Tx(bigLabel_Test)
-
-    if Param_Data.Augmentation_Value.augmentationType == "sans"
+@infiltrate
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
         savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)"
     else 
         savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
@@ -266,7 +267,7 @@ function loadCSV_Synthetic(Param_Data)
     nbChunks=Int(nbRadioTx*nbSignaux)
     nbTrain = Int(round(pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
-    if augmentationType == "sans"
+    if augmentationType == "No_channel"
         savepath = "./CSV_Files/$(augmentationType)_$(nbRadioTx)_$(ChunkSize)/$(E)_$(S)/$(E)_$(S)_$(C)_$(RFF)_$(nbSignaux)_$(name)"    
     else  
         channel = Param_Data.Augmentation_Value.Channel

@@ -54,13 +54,13 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
         hardware1 ="CPU"
     end 
     if savepathbson == ""
-        if Param_Data.Augmentation_Value.augmentationType == "sans"
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
             savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
         else 
             savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
         end 
     end 
-    if Param_Data.Augmentation_Value.augmentationType == "sans"
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
         savename ="$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"
     else 
         savename ="$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
@@ -119,7 +119,7 @@ function Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
     else 
         hardware1 ="CPU"
     end 
-    if Param_Data.Augmentation_Value.augmentationType == "sans"
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
         name= "$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"
         else 
         name ="$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.name)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"

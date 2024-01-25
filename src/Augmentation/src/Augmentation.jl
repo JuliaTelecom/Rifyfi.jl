@@ -5,7 +5,7 @@ using Random
 using DigitalComm
 using DSP
 using Distributed
-
+using Infiltrator
 include("Struct_Augmentation.jl")
 export Data_Augmented
 export Data_Augmented_construct
@@ -47,7 +47,7 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
             subSigAugmented = zeros(ComplexF32,Int(ChunkSize*burstSizeTemp))
             subSig = @views sig[  Int((iN-1)*ChunkSize*burstSize) .+ (1:Int(ChunkSize*burstSizeTemp))]
             for j = 1 : 1 : pourcentAugment  
-                Random.seed!(seed * iR + j )    
+                Random.seed!(seed * iR + j )   
                 #--- Data augmentation 
                 # First get unique impairment model
                 σ   = choose(snrRange)

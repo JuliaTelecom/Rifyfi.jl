@@ -67,7 +67,7 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="")
         hardware1 ="CPU"
     end 
     if savepathbson == ""
-        if Param_Data.Augmentation_Value.augmentationType == "sans"
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
             savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
         else 
             savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
@@ -101,7 +101,7 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="")
     savepath ="Results/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
     !ispath(savepath) && mkpath(savepath)
         Temp=zeros(1,Param_Data.nbTx)
-        if Param_Data.Augmentation_Value.augmentationType == "sans"
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
             file="$(savepath)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_seed_$(Param_Network.Seed_Network).csv"
         else 
             file="$(savepath)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)_seed_$(Param_Network.Seed_Network).csv"
@@ -123,7 +123,6 @@ function MainPlottingMatrix_Latex(file,E="E2",S="S1",C="C1",Network="AlexNet",RF
     header      = (["Tx\$_$i\$" for i = 1 : 1 : nbRadioTx])
     row_labels  = (["TxTrue\$_$i\$" for i = 1 : 1 : nbRadioTx])
     row_label_column_title = "\\backslashbox[15mm][]{\\footnotesize True}{\\footnotesize Guess}"
-       # file="run/ManySig/sans_$(nbRadioTx)_$(ChunkSize)_$(Network)/$(hardware)/confMatrix_$(E)_$(S)_$(C)_$(C_test)_$(RFF).csv"
         cellcolor_header = "blue!10!white"      
 
         m = latexConfusionMatrix(file;doSave=true,standalone=true,header,row_label_column_title,row_labels,cellcolor_header)
