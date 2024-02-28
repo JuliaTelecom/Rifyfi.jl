@@ -14,21 +14,28 @@ RiFyFi is composed of different subpackage
 
 ## Protocol to use RiFyFi with Julia 
 
-Insatall Julia (here develop with 1.8.5)
-Create a folders
-Download or clone the project with: git clone https://github.com/JuliaTelecom/Rifyfi.jl
-Going in Rifyfi.jl folders
-Open a Julia terminal
-Activate the project ] activate .
-Instantiate the project with ] instantiate 
+- Insatall Julia (here develop with 1.8.5)
+- Create a folders
+- Download or clone the project with: git clone https://github.com/JuliaTelecom/Rifyfi.jl
+- Going in Rifyfi.jl folders
+- Open a Julia terminal
+- From the Julia REPL, type `]` to enter the Pkg REPL mode and run:
 
+```pkg
+pkg> activate .
+pkg>  instantiate
+```
 Then you can you the script script_example.jl, in the Julia Terminal :
-include("src/script_exemple.jl")
+```
+julia> include("src/script_exemple.jl")
+```
+
+If you want to create your own scenario use the script example to configure the database generator.
 
 
-Then you can use RiFyFi in two manners: 
+You can use RiFyFi in two manners: 
 -   Creating random parameter values for impairments 
--   Define the value of the impairments parameters with scenario file 
+-   Define the value of the impairments parameters with scenario file, for example a scenario file is propose with 6 transmitters and 5% of similarity between Impairments. 
 
 
 
