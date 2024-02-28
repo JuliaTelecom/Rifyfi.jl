@@ -13,7 +13,6 @@ using DigitalComm
 using Distributed 
 using FFTW 
 using Flux 
-using Infiltrator 
 using JSON
 using LinearAlgebra 
 using Logging 

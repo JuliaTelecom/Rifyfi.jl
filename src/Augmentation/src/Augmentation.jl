@@ -5,7 +5,6 @@ using Random
 using DigitalComm
 using DSP
 using Distributed
-using Infiltrator
 include("Struct_Augmentation.jl")
 export Data_Augmented
 export Data_Augmented_construct

@@ -7,7 +7,6 @@ using DataFrames, CSV       # Manage confusion matrix files
 using PrettyTables          # Rendering latex 
 using Colors, ColorSchemes  # Gradient colors
 using InteractiveUtils: clipboard
-using Infiltrator
 # --- Methods extension 
 import Base:getindex
 

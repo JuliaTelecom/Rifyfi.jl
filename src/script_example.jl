@@ -1,6 +1,5 @@
 
 using RiFyFi
-using Infiltrator
 using RFImpairmentsModels 
 
 using RiFyFi.Augmentation
@@ -64,7 +63,7 @@ savepathbson=""
 Augmentation_Value = Augmentation.Data_Augmented_construct(augmentationType=augmentationType,nb_Augment=nb_Augment,Channel=Channel,Channel_Test=Channel_Test)
 Param_Data = RiFyFi.RiFyFi_VDG.Data_Synth(name,nameModel,nbRadioTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,Augmentation_Value)
 RiFyFi_VDG.setSynthetiquecsv(Param_Data)
-@infiltrate
+
 Train_args = RiFyFi_IdF.Args(η = η, dr=dr, epochs= epochs, batchsize=batchsize)
 Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSignals,Seed_Network,Train_args) 
 RiFyFi.main(Param_Data,Param_Network)     

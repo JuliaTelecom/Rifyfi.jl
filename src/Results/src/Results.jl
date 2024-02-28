@@ -15,7 +15,6 @@ using Random
 using Flux
 using CSV
 using DataFrames
-using Infiltrator
 gr()  
 include("../../LatexConfusionMatrix/src/LatexConfusionMatrix.jl")
 using .LatexConfusionMatrix
