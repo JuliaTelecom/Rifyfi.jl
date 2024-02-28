@@ -25,7 +25,7 @@ end
 function setup_nonLinearPA_memory(dict,indexRadio)
   with_nonLinearPA = @loadKey dict "with_nonLinearPA" false 
   if with_nonLinearPA
-  file= matopen("../My_Signal_Synthesis/PA_memory_models.mat")
+  file= matopen("./src/RiFyFi_VDG/PA_memory_models.mat")
   parameters=read(file)["parameters"]
   param = parameters[indexRadio];
   order = Int(param["pa"]["P"]); # nonlinearity order of the PA
@@ -45,15 +45,12 @@ end
 
 #pa = parameters[r]["pa"] # on réccupère les paramètres du PA de la radio numéro r
     
-    
 
 #memory          = [1,2,2,2,2]
 #order           = 9
 #backoff         = 10 # In dB
 #bandwidth       = 120e6 
 #pa_coefficients = zeros(ComplexF64,sum(memory)) # To be changed with correct coefficients
-
-
 
 # Init the structure 
 #pa = Memory_PowerAmplifier(pa_coefficients,order,memory,backoff,bandwidth)
@@ -74,17 +71,13 @@ end
 
 
 function memoryPA(input,pa::Memory_PowerAmplifier,r)
-   
-    # A changer pour réccupére les donner la la structure pa 
     # Memory polynomial PA model
     L_in = length(input);
     M = pa.memory; # memory order of the PA
     P = pa.order; # nonlinearity order of the PA   
     backoff =pa.backoff
 
-    ###### 
-    # A conserver 
-    #####
+
     # Scale input power according to the specified back-off  
     Pin = mean(abs.(input).^2);  # store the input power, and scale back to it after the TX model
     scale_input = 1/sqrt(10^(backoff/10)*Pin); # 0 dB back-off corresponds to input power=1

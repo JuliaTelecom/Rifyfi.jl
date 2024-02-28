@@ -1,21 +1,22 @@
 Base.@kwdef mutable struct Data_Synth
-    name::String = ""
-    nameModel::String = ""
-    nbTx::Int = 4
-    nbSignals::Int = 12000
-    Chunksize::Int = 256
-    features::String= "IQsamples"
-    S::String = "S1"
-    E::String = "E2"
-    C::String = "C2_20dB"
-    RFF::String = "all_impairments"
-    Normalisation::Bool = true
-    pourcentTrain::Float64 =0.9
-    configuration::String  = "non"
-    seed_data::Int = 1234
+    name::String = ""  # Name use to save the configuration
+    nameModel::String = ""   # Name use to save the configuration
+    nbTx::Int = 4 # Nb transmitters in the database 
+    nbSignals::Int = 12000 # Nb signals per transmitter for Train + test
+    Chunksize::Int = 256 # Size of packet
+    features::String= "IQsamples" # In this version always use "IQsamples" 
+    S::String = "S1" # S described the type of signal trame use in database (S1 preamble, S2 MAC address, S3 Payload)
+    E::String = "E3" # E3 always to have a dynamic Phase noise impairments and different impairments for each transmitter
+    C::String = "C2_20dB" # C described the level of noise 
+    RFF::String = "all_impairments" # define the impairments which are activate 
+    Normalisation::Bool = true # Normalise dataset
+    pourcentTrain::Float64 =0.9 # Define the proportion of the Train /Test sets
+    configuration::String  = "nothing" # use "scenario" to reload a predefined scenario or "nothing" to let the generator create a random scenario 
+    seed_data::Int = 1234 # Define the seed to ensure random and reproductible result
     seed_model::Int = 2345
     seed_dataTest::Int = 1234
     seed_modelTest::Int = 2345
+    Modulation::String = "OFDM" # define the Modulation
     Augmentation_Value = Data_Augmented_construct() 
 end
 
@@ -122,10 +123,16 @@ function Data_Synth_construct(; kwargs...)
         seed_modelTest = 15987654321
     end 
 
+    if haskey(kwargs, :Modulation)
+        Modulation = kwargs[:Modulation]
+    else 
+        Modulation = ""
+    end 
+
     if haskey(kwargs, :Augmentation_Value)
         Augmentation_Value = kwargs[:Augmentation_Value]
     else 
         Augmentation_Value = Data_Augmented_construct() 
     end
-return Data_Synth(name,nameModel,nbTx,nbSignals,Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value)
+return Data_Synth(name,nameModel,nbTx,nbSignals,Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,Augmentation_Value)
 end

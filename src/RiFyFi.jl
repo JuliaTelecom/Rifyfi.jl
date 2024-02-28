@@ -30,6 +30,13 @@ using .RiFyFi_VDG
 include("RiFyFi_IdF/src/RiFyFi_IdF.jl")
 using .RiFyFi_IdF
 
+include("Augmentation/src/Augmentation.jl")
+using .Augmentation
+
+include("Results/src/Results.jl")
+using .Results
+
+
 # ----------------------------------------------------
 # --- Loading utility functions
 # ---------------------------------------------------- 
@@ -60,22 +67,22 @@ function main(Param_Data,Param_Network)
 
     (dataTrain,dataTest) = init(Param_Data,Param_Network)
     if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-        savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
+        savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
     else 
-        savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
+        savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
     end 
-    !ispath(savepath) && mkpath(savepath)
-    @infiltrate
-    (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath,Param_Network)
+    !ispath(savepath_model) && mkpath(savepath_model)
+    
+    (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Param_Data.Modulation)
     # ----------------------------------------------------
     # --- Saving model 
     # ---------------------------------------------------- 
-    modelpath = joinpath(savepath, "model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson") 
+    modelpath = joinpath(savepath_model, "model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Param_Data.Modulation).bson") 
     nbEpochs = args.epochs
     BSON.@save modelpath model nbEpochs trainLoss trainAcc testLoss testAcc args 
     testAugmented_acc =0
     testAugmented_loss=0    
-    return (savepath,model,trainLoss,trainAcc,testLoss,testAcc,testAugmented_loss,testAugmented_acc) 
+    return (savepath_model,model,trainLoss,trainAcc,testLoss,testAcc,testAugmented_loss,testAugmented_acc) 
 end
 
 

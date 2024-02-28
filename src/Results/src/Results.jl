@@ -30,7 +30,7 @@ using .RiFyFi_VDG
 include("../../RiFyFi_IdF/src/RiFyFi_IdF.jl")
 using .RiFyFi_IdF
 
-function main(Param_Data,Param_Network,Type_Resuts,Table_Seed_Network,savepathbson)
+function main(Param_Data,Param_Network,Type_Resuts,Table_Seed_Network,savepathbson,Param_Data_test)
 
     if Type_Resuts == "F1_score"
         F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson)
@@ -39,7 +39,7 @@ function main(Param_Data,Param_Network,Type_Resuts,Table_Seed_Network,savepathbs
         Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
     
     elseif Type_Resuts == "Confusion_Matrix"
-        Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson )
+        Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson,Param_Data_test )
     
     end 
 
@@ -55,9 +55,9 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
     end 
     if savepathbson == ""
         if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-            savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
+            savepathbson = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
         else 
-            savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
+            savepathbson = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
         end 
     end 
     if Param_Data.Augmentation_Value.augmentationType == "No_channel"
@@ -85,7 +85,7 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
     for i =1 :1: size(Table_Seed_Network,1)
         Param_Network.Seed_Network= Table_Seed_Network[i]
         name = savename
-        Scenario ="$(savepathbson)/F1_Score_$(hardware1)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).csv"
+        Scenario ="$(savepathbson)/F1_Score_$(hardware1)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Param_Data.Modulation).csv"
         delim=';'
         nameBase = split(Scenario,".")[1]
         #  ----------------------------------------------------
@@ -104,7 +104,7 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
         @pgf push!(a, LegendEntry("Seed $(i)")) # Train)
       
     end
-    pgfsave("$(savepathbson)/F1_Score_$(savename).tex",a)
+    pgfsave("$(savepathbson)/F1_Score_$(savename)_$(Param_Data.Modulation).tex",a)
 
 end
 
@@ -113,7 +113,7 @@ end
 
 function Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)    
     
-    savepath = "../My_RFFI_Syst/run/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
+    savepath = "run/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
     if Param_Network.Train_args.use_cuda ==true 
         hardware1 = "GPU"
     else 

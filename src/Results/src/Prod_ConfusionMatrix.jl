@@ -53,14 +53,15 @@ end
 
 
 """ Fonction qui plot la matrice de confusion en format csv \n 
-    filename = .pkl file 
+    filename = .pkl
+     file 
     txs,rxs,days,equalized = param for test with 2 for equalized
     rxsnn,daysnn = param to choose to CNN 
     ChunSize = 256 
     dataAug = "sans" or "OfflineV1" 
 """
 
-function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="")
+function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="",Param_Data_test=Param_Data)
     if Param_Network.Train_args.use_cuda ==true 
         hardware1 = "GPU"
     else 
@@ -68,22 +69,23 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="")
     end 
     if savepathbson == ""
         if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-            savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
+            savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
         else 
-            savepathbson = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
+            savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
         end 
     end 
 
     allAcc = Float64[]
         
-    res =RiFyFi_IdF.loadCNN("$(savepathbson)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson")
+    res = RiFyFi_IdF.loadCNN("$(savepath_model)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Param_Data.Modulation).bson")
+    #res =RiFyFi_IdF.loadCNN("$(savepath_model)/model_new.bson")
 
     model = res.model
     testmode!(model, true)  # We are in test mode, with no dropout 
     (moy,std_val) = (nothing,nothing)
     allAccuracy = Float64[]
    
-    (_,_,X_test,Y_test) =loadCSV_Synthetic(Param_Data) 
+    (_,_,X_test,Y_test) =loadCSV_Synthetic(Param_Data_test) 
 
     
     if Param_Network.Train_args.use_cuda
@@ -98,13 +100,13 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="")
     confMatrix = confusionMatrix(l̂,l,Param_Data.nbTx)
     plt = plotConfusionMatrix(confMatrix )
 
-    savepath ="Results/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
-    !ispath(savepath) && mkpath(savepath)
+    savepath_result ="Results/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
+    !ispath(savepath_result) && mkpath(savepath_result)
         Temp=zeros(1,Param_Data.nbTx)
         if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-            file="$(savepath)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_seed_$(Param_Network.Seed_Network).csv"
+            file="$(savepath_result)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_seed_$(Param_Network.Seed_Network).csv"
         else 
-            file="$(savepath)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)_seed_$(Param_Network.Seed_Network).csv"
+            file="$(savepath_result)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)_seed_$(Param_Network.Seed_Network).csv"
         end 
         open(file,"w") do io
             for i in 0:size(confMatrix,1)-1

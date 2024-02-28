@@ -69,7 +69,7 @@ end
 
 
 
-function customTrain!(dataTrain,dataTest,savepath,Param_Network)
+function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation)
     # ----------------------------------------------------
     # --- CPU or GPU
     # ---------------------------------------------------- 
@@ -151,7 +151,7 @@ function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # Timings are calculated per eopch, we want complete time 
     Param_Network.Train_args.timings = cumsum(Param_Network.Train_args.timings;dims=1)
     # Write timings and accuracy in a file 
-    open("$(savepath)/F1_Score_$(DeviceName)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).csv","w") do io 
+    open("$(savepath_model)/F1_Score_$(DeviceName)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Modulation).csv","w") do io 
         arr = [Param_Network.Train_args.timings[1:epoch] trainf1 testf1 trainLoss testLoss]
         writedlm(io,round.(arr;digits=4),';')
     end

@@ -266,6 +266,8 @@ end
 
 function loadCNN(cnnPath)
     # --- Loading data 
+   # dict = BSON.parse(cnnPath)
+    
     dict = BSON.load(cnnPath,@__MODULE__) 
     # --- Exporting variables 
     model     = dict[:model]
@@ -273,6 +275,7 @@ function loadCNN(cnnPath)
     trainAcc  = dict[:trainAcc]
     testLoss  = dict[:testLoss]
     trainLoss = dict[:trainLoss]
+
     #=moy = 0 
         std = 1
     try 
@@ -317,6 +320,8 @@ include("Struct_Network.jl")
 export Network_struct
 export Args
 export Args_construct
+
+
 
 end 
 

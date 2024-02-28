@@ -3,17 +3,10 @@ using RiFyFi
 using Infiltrator
 using RFImpairmentsModels 
 
-include("Augmentation/src/Augmentation.jl")
-using .Augmentation
-
-include("RiFyFi_VDG/src/RiFyFi_VDG.jl")
-using .RiFyFi_VDG
-
-include("RiFyFi_IdF/src/RiFyFi_IdF.jl")
-using .RiFyFi_IdF
-
-include("Results/src/Results.jl")
-using .Results
+using RiFyFi.Augmentation
+using RiFyFi.RiFyFi_IdF
+using RiFyFi.RiFyFi_VDG
+using RiFyFi.Results
 
 # Parameters DataBase Synth
 name= "Example_Database" 
@@ -42,12 +35,13 @@ if S == "S1" || S == "S2"
 else 
     seed_dataTest = 9999246912 * 100000000
 end 
+Modulation = "SC" # SC for single carrier modulation or OFDM or LoRa
 
 # Parameters for Data Augmentation
 nb_Augment= 1  # Define the number of channel for each transmitter
 augmentationType="No_channel" # use No_channel, augment or same_channel
 Channel="etu" 
-Channel_Test="eva"
+Channel_Test="etu"
 
 
 # Network Parameters
@@ -55,33 +49,30 @@ Networkname="AlexNet" # Name of the Network
 NbClass =nbRadioTx 
 #Chunksize 
 #NbSignals
-Seed_Network= 11 
-
+Table_Seed_Network= [11] 
+Seed_Network =11
 # Train Args
 η = 1e-5   # learning rate 
 dr = 0.25  # dropout 
 batchsize = 64
-epochs = 2000
+epochs = 20
 use_cuda = true  
 
 savepathbson=""
 
 
 Augmentation_Value = Augmentation.Data_Augmented_construct(augmentationType=augmentationType,nb_Augment=nb_Augment,Channel=Channel,Channel_Test=Channel_Test)
-Param_Data = RiFyFi_VDG.Data_Synth(name,nameModel,nbRadioTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value)
-setSynthetiquecsv(Param_Data)
-
+Param_Data = RiFyFi.RiFyFi_VDG.Data_Synth(name,nameModel,nbRadioTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,Augmentation_Value)
+RiFyFi_VDG.setSynthetiquecsv(Param_Data)
+@infiltrate
 Train_args = RiFyFi_IdF.Args(η = η, dr=dr, epochs= epochs, batchsize=batchsize)
 Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSignals,Seed_Network,Train_args) 
 RiFyFi.main(Param_Data,Param_Network)     
  
     
-nameTable = [name]
-Seed_Network= Table_Seed_Network[1]
-Train_args = RiFyFi_IdF.Args(η = η ,dr=dr, epochs= epochs,batchsize=batchsize)
-Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSignals,Seed_Network,Train_args) 
-Results.main(Param_Data,Param_Network,"F1_score",Table_Seed_Network,savepathbson)
-Results.main(Param_Data,Param_Network,"Confusion_Matrix",Table_Seed_Network,savepathbson)
+
+Results.main(Param_Data,Param_Network,"F1_score",Table_Seed_Network,savepathbson,Param_Data)
+Results.main(Param_Data,Param_Network,"Confusion_Matrix",Table_Seed_Network,savepathbson,Param_Data)
 
 
 
