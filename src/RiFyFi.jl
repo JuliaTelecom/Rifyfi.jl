@@ -24,6 +24,7 @@ using Plots
 using ProgressMeter 
 using Random 
 using Statistics 
+using Infiltrator
 include("RiFyFi_VDG/src/RiFyFi_VDG.jl")
 using .RiFyFi_VDG
 include("RiFyFi_IdF/src/RiFyFi_IdF.jl")
@@ -64,7 +65,9 @@ function main(Param_Data,Param_Network)
         hardware= "CPU"
     end
 
-    (dataTrain,dataTest) = init(Param_Data,Param_Network)
+    (dataTrain,dataTest,dataTrain_dyn,dataTest_dyn) = init(Param_Data,Param_Network)
+    
+
     if Param_Data.Augmentation_Value.augmentationType == "No_channel"
         savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
     else 
@@ -72,7 +75,11 @@ function main(Param_Data,Param_Network)
     end 
     !ispath(savepath_model) && mkpath(savepath_model)
     
-    (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Param_Data.Modulation)
+    if Param_Data.RFF == "all_impairments_dynamic_cfo"
+        (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Param_Data.Modulation,dataTrain_dyn,dataTest_dyn)
+    else   
+        (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Param_Data.Modulation)
+    end 
     # ----------------------------------------------------
     # --- Saving model 
     # ---------------------------------------------------- 
@@ -100,7 +107,15 @@ function init(Param_Data,Param_Network)
     Random.seed!(Param_Network.Seed_Network)
     
     (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
-    
+    if Param_Data.RFF=="all_impairments_dynamic_cfo"
+        (X_train_dyn,Y_train_dyn,X_test_dyn,Y_test_dyn)=loadCSV_Synthetic_dynCFO(Param_Data)
+        rng = MersenneTwister(Param_Network.Seed_Network)
+        dataTrain_dyn = Flux.Data.DataLoader((X_train_dyn,Y_train_dyn), batchsize = Param_Network.Train_args.batchsize,rng=rng, shuffle = true)
+        dataTest_dyn  = Flux.Data.DataLoader((X_test_dyn, Y_test_dyn), batchsize = Param_Network.Train_args.batchsize,rng=rng, shuffle = true)
+    else 
+        dataTrain_dyn = 0
+        dataTest_dyn = 0
+    end 
 
     # ----------------------------------------------------
     # --- Create datasets
@@ -114,8 +129,8 @@ function init(Param_Data,Param_Network)
     @info "Init Network "
     if Param_Network.Networkname == "AlexNet"
         (nn,loss)= initAlexNet(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname=="Feng"
-        (nn,loss)= initFeng(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+    elseif Param_Network.Networkname=="DenseEmma"
+        (nn,loss)= DenseEmma(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname == "GDA"
         (nn,loss)= initGDA(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname == "Merchant"
@@ -127,7 +142,7 @@ function init(Param_Data,Param_Network)
     end 
     Param_Network.loss = loss
     Param_Network.model = nn
-    return (dataTrain,dataTest)
+    return (dataTrain,dataTest,dataTrain_dyn,dataTest_dyn)
 end
 
 

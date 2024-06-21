@@ -21,15 +21,22 @@ using DSP
 using Plots
 
 
+
 # Augmentation Module, add channel model on data
 include("../../Augmentation/src/Augmentation.jl") 
 using .Augmentation
+
+
+include("./DatBinaryFiles.jl")
+using .DatBinaryFiles
 # ----------------------------------------------------
 # --- Export 
 # ---------------------------------------------------- 
 export getKey, @loadKey
 export setSynthetiquecsv
 export loadCSV_Synthetic
+export loadCSV_Synthetic_dynCFO
+#export init_dynCFO
 # ----------------------------------------------------
 # --- Loading utils on keys 
 # ---------------------------------------------------- 
@@ -68,43 +75,115 @@ export Data_Synth_construct
     - Test Labels
      """
 function setSynthetiquecsv(Param_Data)
-    (bigMatTrain,bigLabel_Train,bigMatTest,bigLabel_Test,X) = create_virtual_Database(Param_Data)
-    bigLabels_Train = create_bigMat_Labels_Tx(bigLabel_Train)
-    bigLabels_Test = create_bigMat_Labels_Tx(bigLabel_Test)
+    
+    if Param_Data.RFF == "all_impairments_dynamic_cfo"
+        
+        (bigMatTrain,bigLabel_Train,bigMatTest,bigLabel_Test,bigMatTrain_dyn,bigLabel_Train_dyn,bigMatTest_dyn,bigLabel_Test_dyn,X) =  create_virtual_Database_dynCFO(Param_Data)
+       
+        @infiltrate
+        bigLabels_Train = create_bigMat_Labels_Tx(bigLabel_Train)
+        bigLabels_Test = create_bigMat_Labels_Tx(bigLabel_Test)
 
-    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-        savepath_CSVfiles = "./CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)"
+        bigLabels_Train_dyn = create_bigMat_Labels_Tx(bigLabel_Train_dyn)
+        bigLabels_Test_dyn = create_bigMat_Labels_Tx(bigLabel_Test_dyn)
+
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+            savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)"
+
+        else 
+            savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
+        end
+        !ispath(savepath_CSVfiles) && mkpath(savepath_CSVfiles)    
+
+        # Save in CSV files 
+        open("$(savepath_CSVfiles)/bigMatTrain.csv","w") do io
+            for i in 1:size(bigMatTrain)[3]
+                writedlm(io,[vcat(bigMatTrain[:,:,i][:,1],bigMatTrain[:,:,i][:,2])])  
+            end
+        end
+
+        open("$(savepath_CSVfiles)/bigMatTest.csv","w") do io
+            for i in 1:size(bigMatTest)[3]
+                writedlm(io,[vcat(bigMatTest[:,:,i][:,1],bigMatTest[:,:,i][:,2])])   
+            end
+        end
+
+        open("$(savepath_CSVfiles)/bigLabelsTrain.csv","w") do io
+            for i in 1:size(bigLabels_Train)[1]                 
+                writedlm(io,[bigLabels_Train[i]])                          
+            end
+        end
+
+        open("$(savepath_CSVfiles)/bigLabelsTest.csv","w") do io
+            for i in 1:size(bigLabels_Test)[1]              
+                writedlm(io,[bigLabels_Test[i]])                     
+            end
+        end
+        #########################################################
+        # --- CFO Dynamique -------------------------------------
+        #########################################################
+
+        open("$(savepath_CSVfiles)/bigMatTrain_dyn.csv","w") do io
+            for i in 1:size(bigMatTrain_dyn)[3]
+                writedlm(io,[vcat(bigMatTrain_dyn[:,:,i][:,1],bigMatTrain_dyn[:,:,i][:,2])])  
+            end
+        end
+        open("$(savepath_CSVfiles)/bigLabelsTrain_dyn.csv","w") do io
+            for i in 1:size(bigLabels_Train_dyn)[1]                 
+                writedlm(io,[bigLabels_Train_dyn[i]])                          
+            end
+        end
+        open("$(savepath_CSVfiles)/bigMatTest_dyn.csv","w") do io
+            for i in 1:size(bigMatTest_dyn)[3]
+                writedlm(io,[vcat(bigMatTest_dyn[:,:,i][:,1],bigMatTest_dyn[:,:,i][:,2])])   
+            end
+        end
+        open("$(savepath_CSVfiles)/bigLabelsTest_dyn.csv","w") do io
+            for i in 1:size(bigLabels_Test_dyn)[1]              
+                writedlm(io,[bigLabels_Test_dyn[i]])                     
+            end
+        end
+    
+    
     else 
-        savepath_CSVfiles = "./CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
-    end
-    !ispath(savepath_CSVfiles) && mkpath(savepath_CSVfiles)    
-
-    # Save in CSV files 
-    open("$(savepath_CSVfiles)/bigMatTrain.csv","w") do io
-        for i in 1:size(bigMatTrain)[3]
-            writedlm(io,[vcat(bigMatTrain[:,:,i][:,1],bigMatTrain[:,:,i][:,2])])  
+        (bigMatTrain,bigLabel_Train,bigMatTest,bigLabel_Test,X) = create_virtual_Database(Param_Data)
+        bigLabels_Train = create_bigMat_Labels_Tx(bigLabel_Train)
+        bigLabels_Test = create_bigMat_Labels_Tx(bigLabel_Test)
+        DatBinaryFiles.writeComplexBinary(X[:,1],"./TX1")
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+            savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)"
+        else 
+            savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
         end
-    end
+        !ispath(savepath_CSVfiles) && mkpath(savepath_CSVfiles)    
 
-    open("$(savepath_CSVfiles)/bigMatTest.csv","w") do io
-        for i in 1:size(bigMatTest)[3]
-            writedlm(io,[vcat(bigMatTest[:,:,i][:,1],bigMatTest[:,:,i][:,2])])   
+        # Save in CSV files 
+        open("$(savepath_CSVfiles)/bigMatTrain.csv","w") do io
+            for i in 1:size(bigMatTrain)[3]
+                writedlm(io,[vcat(bigMatTrain[:,:,i][:,1],bigMatTrain[:,:,i][:,2])])  
+            end
         end
-    end
 
-    open("$(savepath_CSVfiles)/bigLabelsTrain.csv","w") do io
-        for i in 1:size(bigLabels_Train)[1]                 
-            writedlm(io,[bigLabels_Train[i]])                          
+        open("$(savepath_CSVfiles)/bigMatTest.csv","w") do io
+            for i in 1:size(bigMatTest)[3]
+                writedlm(io,[vcat(bigMatTest[:,:,i][:,1],bigMatTest[:,:,i][:,2])])   
+            end
         end
-    end
 
-    open("$(savepath_CSVfiles)/bigLabelsTest.csv","w") do io
-        for i in 1:size(bigLabels_Test)[1]              
-            writedlm(io,[bigLabels_Test[i]])                     
+        open("$(savepath_CSVfiles)/bigLabelsTrain.csv","w") do io
+            for i in 1:size(bigLabels_Train)[1]                 
+                writedlm(io,[bigLabels_Train[i]])                          
+            end
         end
+
+        open("$(savepath_CSVfiles)/bigLabelsTest.csv","w") do io
+            for i in 1:size(bigLabels_Test)[1]              
+                writedlm(io,[bigLabels_Test[i]])                     
+            end
+        end 
+
     end
 end
-
 
 
 
@@ -115,7 +194,7 @@ Create train and test dataset (here matrixes and not dataloader) for a configura
 (X_train,Y_train,X_test,Y_test,tupTrain.X) = create_X_and_Y(Param_Data::RiFyFi_VDG.Data_Synth)
 """
 function create_virtual_Database(Param_Data)
-    shuffle = true
+    shuffle = false
     @info "Create virtual Tx"
     # ----------------------------------------------------------------
     # --- Create configuration with parameters and random impairments
@@ -130,8 +209,8 @@ function create_virtual_Database(Param_Data)
         createConfiguration(configurationTrain,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,Param_Data.C,Param_Data.seed_model,Param_Data.seed_data)
         createConfiguration(configurationTest,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,Param_Data.C,Param_Data.seed_modelTest,Param_Data.seed_dataTest)
         # --- Generate Database random database correspond to the parameters and configuration
-        tupTrain = generateDatabase(configurationTrain,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Int(Param_Data.nbSignals*Param_Data.pourcentTrain))
-        tupTest = generateDatabase(configurationTest,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain))
+        tupTrain = generateDatabase(configurationTrain,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data)
+        tupTest = generateDatabase(configurationTest,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data)
         # --- Save configuration of the Database with value of impairments
         saveScenario("$(savePath_config)/scenario.json",tupTrain.dict_out)
     # ---------------------------------------------------------------------------
@@ -148,9 +227,15 @@ function create_virtual_Database(Param_Data)
         createConfiguration(configurationTrain,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,Param_Data.C,Param_Data.seed_model,Param_Data.seed_data)
         createConfiguration(configurationTest,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,Param_Data.C,Param_Data.seed_modelTest,Param_Data.seed_dataTest)
         # --- Create database based on scenarios impairments previously defined 
-        s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenario.json",RFF)
-        tupTrain = generateDatabase(configurationTrain,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Int(Param_Data.nbSignals*Param_Data.pourcentTrain);s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
-        tupTest = generateDatabase(configurationTest,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain);s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+        s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenario.json",Param_Data.RFF)
+        tupTrain = generateDatabase(configurationTrain,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data;s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+        if ispath("$(savePath_config)/scenarioTest.json")
+            s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenarioTest.json",Param_Data.RFF)
+            @info "load Test "
+        else 
+            s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenario.json",Param_Data.RFF)
+        end
+        tupTest = generateDatabase(configurationTest,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data;s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
     end 
     # --- Compute dimension of Matrices 
     nbChunks = Param_Data.nbSignals * Param_Data.nbTx 
@@ -181,7 +266,8 @@ function create_virtual_Database(Param_Data)
     # --------------------------------------------------
     if (Param_Data.Augmentation_Value.augmentationType=="augment" || 
         Param_Data.Augmentation_Value.augmentationType=="same_channel" || 
-        Param_Data.Augmentation_Value.augmentationType=="1channelTest")
+        Param_Data.Augmentation_Value.augmentationType=="1channelTest" ||
+        Param_Data.Augmentation_Value.augmentationType=="Change_channel" )
         @info "Augmentation * " Param_Data.Augmentation_Value.nb_Augment
         if Param_Data.Augmentation_Value.augmentationType=="augment" 
             N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # on génère toujours nbSignaux par canal 
@@ -198,8 +284,15 @@ function create_virtual_Database(Param_Data)
             N = Param_Data.nbSignals - N 
             nbAugment_Test = Param_Data.Augmentation_Value.nb_Augment
             (X_test,Y_test)=Augmentation.Add_diff_Channel_train_test(X_testTemp,Y_testTemp,N,Param_Data.Augmentation_Value.Channel,Param_Data.Chunksize,nbAugment_Test,Param_Data.nbTx,Param_Data.Augmentation_Value.seed_channel,Param_Data.Augmentation_Value.burstSize)
-        end 
-        else
+        elseif Param_Data.Augmentation_Value.augmentationType=="Change_channel"
+            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # on génère toujours nbSignaux par canal 
+            ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,Param_Data.Augmentation_Value.Channel,Param_Data.Chunksize,Param_Data.Augmentation_Value.nb_Augment,Param_Data.nbTx,Param_Data.Augmentation_Value.seed_channel,Param_Data.Augmentation_Value.burstSize)
+            # TEST
+            N = Param_Data.nbSignals - N 
+            nbAugment_Test = Param_Data.Augmentation_Value.nb_Augment
+            (X_test,Y_test)=Augmentation.AddChannelTest(X_testTemp,Y_testTemp,N,Param_Data.Augmentation_Value.Channel,Param_Data.Chunksize,nbAugment_Test,Param_Data.nbTx,Param_Data.Augmentation_Value.seed_channel,Param_Data.Augmentation_Value.burstSize)
+        end  
+    else
         Param_Data.Augmentation_Value.nb_Augment = 1
         nbAugment_Test =1
         X_train =X_trainTemp
@@ -241,6 +334,138 @@ function create_virtual_Database(Param_Data)
     return (X_train,Y_train,X_test,Y_test,tupTrain.X)
 end
 
+
+
+""" 
+Create train and test dataset (here matrixes and not dataloader) for a configuration decribed by RiFyFi_VDG.Data_Synth structure.
+(X_train,Y_train,X_test,Y_test,tupTrain.X) = create_X_and_Y(Param_Data::RiFyFi_VDG.Data_Synth)
+"""
+function create_virtual_Database_dynCFO(Param_Data)
+    
+    shuffle = true
+    @info "Create virtual Tx"
+    # ----------------------------------------------------------------
+    # --- Create configuration with parameters and random impairments
+    # ----------------------------------------------------------------
+    if Param_Data.configuration == "nothing"
+        @info "ERROR" 
+    # ---------------------------------------------------------------------------
+    # --- Create configuration with fixe RFF impairments define in scenario file
+    # ---------------------------------------------------------------------------
+    elseif Param_Data.configuration == "scenario" 
+        # --- Generate Database with fixe impairments scenario
+        @info "Create Tx based on scenario $(Param_Data.E) $(Param_Data.RFF) $(Param_Data.name)" 
+        savePath_config="Configurations/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.RFF)_$(Param_Data.name)"
+        !ispath(savePath_config) && mkpath(savePath_config)
+        # --- Create configuration based on parameter
+        configurationTrain = "$(savePath_config)/ConfigTrain.json"
+        configurationTest = "$(savePath_config)/ConfigTest_$(Param_Data.S).json"
+        createConfiguration(configurationTrain,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,Param_Data.C,Param_Data.seed_model,Param_Data.seed_data)
+        createConfiguration(configurationTest,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,Param_Data.C,Param_Data.seed_modelTest,Param_Data.seed_dataTest)
+        # --- Create database based on scenarios impairments previously defined 
+        s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenario.json",Param_Data.RFF)
+        tupTrain = generateDatabase(configurationTrain,Param_Data.E,Param_Data.S,Param_Data.C,"all_impairments",Param_Data.name,Param_Data.Modulation,Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data;s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+        tupTrain_dyn = generateDatabase(configurationTrain,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data;s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+
+        if ispath("$(savePath_config)/scenarioTest.json")
+            s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenarioTest.json",Param_Data.RFF)
+            @info "load Test "
+        else 
+            s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath_config)/scenario.json",Param_Data.RFF)
+        end
+        tupTest = generateDatabase(configurationTest,Param_Data.E,Param_Data.S,Param_Data.C,"all_impairments",Param_Data.name,Param_Data.Modulation,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data;s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+        tupTest_dyn = generateDatabase(configurationTest,Param_Data.E,Param_Data.S,Param_Data.C,Param_Data.RFF,Param_Data.name,Param_Data.Modulation,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain),Param_Data;s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+    else 
+        @info "error"
+    end 
+    # --- Compute dimension of Matrices 
+    nbChunks = Param_Data.nbSignals * Param_Data.nbTx 
+    nbTrain = Int(round(Param_Data.pourcentTrain * nbChunks)) 
+    nbTest = nbChunks - nbTrain 
+    nbTrain_per_radio =Int(nbTrain/Param_Data.nbTx) 
+    nbTest_per_radio =Int(nbTest/Param_Data.nbTx)
+
+    X_trainTemp = tupTrain.bigMat
+    X_testTemp = tupTest.bigMat
+
+    X_trainTemp_dyn = tupTrain_dyn.bigMat
+    X_testTemp_dyn = tupTest_dyn.bigMat
+    # --- Creation of label for each transmitter  
+
+    Y_trainTemp = zeros(Param_Data.nbTx,nbTrain)
+    Y_testTemp = zeros(Param_Data.nbTx,nbTest)
+
+    Y_trainTemp_dyn = zeros(Param_Data.nbTx,nbTrain)
+    Y_testTemp_dyn = zeros(Param_Data.nbTx,nbTest)
+    for iR =1 :1:Param_Data.nbTx
+        Y_trainTemp[iR,(iR-1)*nbTrain_per_radio+1:iR*nbTrain_per_radio] .= 1
+        Y_testTemp[iR,(iR-1)*nbTest_per_radio+1:iR*nbTest_per_radio] .= 1
+        Y_trainTemp_dyn[iR,(iR-1)*nbTrain_per_radio+1:iR*nbTrain_per_radio] .= 1
+        Y_testTemp_dyn[iR,(iR-1)*nbTest_per_radio+1:iR*nbTest_per_radio] .= 1
+    end
+
+
+    Param_Data.Augmentation_Value.nb_Augment = 1
+    nbAugment_Test =1
+    X_train=X_trainTemp
+    X_test=X_testTemp
+    Y_train=Y_trainTemp
+    Y_test=Y_testTemp
+
+    X_train_dyn=X_trainTemp_dyn
+    X_test_dyn=X_testTemp_dyn
+    Y_train_dyn=Y_trainTemp_dyn
+    Y_test_dyn=Y_testTemp_dyn
+    
+    # ----------------------------------------
+    # --- Shuffle signals with labels 
+    # ----------------------------------------
+    if shuffle
+        X_trainS = zeros(Float32,Param_Data.Chunksize,2,nbTrain*Param_Data.Augmentation_Value.nb_Augment)
+        Y_trainS = zeros(Float32,Param_Data.nbTx,nbTrain*Param_Data.Augmentation_Value.nb_Augment)
+        X_testS = zeros(Float32,Param_Data.Chunksize,2,nbTest*nbAugment_Test)
+        Y_testS = zeros(Float32,Param_Data.nbTx,nbTest*nbAugment_Test)
+        X_trainS_dyn = zeros(Float32,Param_Data.Chunksize,2,nbTrain*Param_Data.Augmentation_Value.nb_Augment)
+        Y_trainS_dyn = zeros(Float32,Param_Data.nbTx,nbTrain*Param_Data.Augmentation_Value.nb_Augment)
+        X_testS_dyn = zeros(Float32,Param_Data.Chunksize,2,nbTest*nbAugment_Test)
+        Y_testS_dyn = zeros(Float32,Param_Data.nbTx,nbTest*nbAugment_Test)
+        indexes = randperm(Int(size(X_train,3)))
+        for i =1 :1 :size(X_train,3)
+            X_trainS[:,:,(i)] = X_train[:,:,(indexes[i])] 
+            Y_trainS[:,(i)] = Y_train[:,(indexes[i])]
+            X_trainS_dyn[:,:,(i)] = X_train_dyn[:,:,(indexes[i])] 
+            Y_trainS_dyn[:,(i)] = Y_train_dyn[:,(indexes[i])]
+        end 
+        indexes = randperm(Int(size(X_test,3)))
+        for i =1 :1 :size(X_test,3)
+            X_testS[:,:,(i)] = X_test[:,:,(indexes[i])] 
+            Y_testS[:,(i)]  = Y_test[:,(indexes[i])]
+            X_testS_dyn[:,:,(i)] = X_test_dyn[:,:,(indexes[i])] 
+            Y_testS_dyn[:,(i)]  = Y_test_dyn[:,(indexes[i])]
+        end 
+        X_train = X_trainS
+        Y_train = Y_trainS
+        X_test = X_testS
+        Y_test = Y_testS
+
+        X_train_dyn = X_trainS_dyn
+        Y_train_dyn = Y_trainS_dyn
+        X_test_dyn = X_testS_dyn
+        Y_test_dyn = Y_testS_dyn
+    end 
+    # ----------------------------------------
+    # --- Normalized data
+    # ----------------------------------------
+   # if Param_Data.Normalisation
+   #     (moy,std_val) = (0,0)
+   #     (moy,std_val) = preProcessing!(X_train,nothing,nothing)
+   #     (moy,std_val) = preProcessing!(X_test,moy,std_val)
+   # end 
+    return (X_train,Y_train,X_test,Y_test,X_train_dyn,Y_train_dyn,X_test_dyn,Y_test_dyn,tupTrain.X)
+end
+
+
+
 """ Function that load data from the CSV file for Synthetic database based on configuration described by 
 RiFyFi_VDG.Data_Synth struct
 """
@@ -250,15 +475,17 @@ function loadCSV_Synthetic(Param_Data)
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
     if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-        savepath_CSVfiles = "./CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"    
+       savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"
     else  
-        savepath_CSVfiles = "./CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
+        savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
+
         nbTrain = nbTrain * Param_Data.Augmentation_Value.nb_Augment
         if Param_Data.Augmentation_Value.augmentationType == "1channelTest"  
             nbTest = nbTest * 1
-        elseif Param_Data.Augmentation_Value.augmentationType == "same_channel"  
+        elseif Param_Data.Augmentation_Value.augmentationType == "same_channel"   ||
+            Param_Data.Augmentation_Value.augmentationType == "Change_channel"
             nbTest = nbTest * 1
-        else Param_Data.Augmentation_Value.augmentationType == "augment"
+        elseif Param_Data.Augmentation_Value.augmentationType == "augment"
             nbTest = nbTest * 100
         end 
     end 
@@ -296,12 +523,70 @@ end
 
 
 
+""" Function that load data from the CSV file for Synthetic database based on configuration described by 
+RiFyFi_VDG.Data_Synth struct
+"""
+function loadCSV_Synthetic_dynCFO(Param_Data)
+
+    nbChunks=Int(Param_Data.nbTx * Param_Data.nbSignals)
+    nbTrain = Int(round(Param_Data.pourcentTrain * nbChunks))
+    nbTest = nbChunks - nbTrain
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+       savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"
+    else  
+        savepath_CSVfiles = "/media/HDD/achillet/RF_Fingerprint/Database/RiFyFi_Database/CSV_Files/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
+
+        nbTrain = nbTrain * Param_Data.Augmentation_Value.nb_Augment
+        if Param_Data.Augmentation_Value.augmentationType == "1channelTest"  
+            nbTest = nbTest * 1
+        elseif Param_Data.Augmentation_Value.augmentationType == "same_channel"   ||
+            Param_Data.Augmentation_Value.augmentationType == "Change_channel"
+            nbTest = nbTest * 1
+        elseif Param_Data.Augmentation_Value.augmentationType == "augment"
+            nbTest = nbTest * 100
+        end 
+    end 
+    # Labels 
+    fileLabelTest= "$(savepath_CSVfiles)/bigLabelsTest_dyn.csv"
+    Y_testTemp = Matrix(DataFrame(CSV.File(fileLabelTest;types=Int64,header=false)))
+    fileLabelTrain= "$(savepath_CSVfiles)/bigLabelsTrain_dyn.csv"
+    Y_trainTemp = Matrix(DataFrame(CSV.File(fileLabelTrain;types=Int64,header=false)))
+    # Data 
+    fileDataTest = "$(savepath_CSVfiles)/bigMatTest_dyn.csv"
+    X_testTemp = Matrix(DataFrame(CSV.File(fileDataTest;types=Float32,header=false)))
+    fileDataTrain= "$(savepath_CSVfiles)/bigMatTrain_dyn.csv"
+    X_trainTemp = Matrix(DataFrame(CSV.File(fileDataTrain;types=Float32,header=false)))
+    X_train = zeros(Float32, Param_Data.Chunksize,2,nbTrain)
+    X_test = zeros(Float32, Param_Data.Chunksize,2,nbTest)
+    Y_train = zeros(Param_Data.nbTx,nbTrain)
+    Y_test = zeros(Param_Data.nbTx,nbTest)
+
+    for i in 1:size(X_trainTemp)[1]  
+        X_train[:,1,i]=X_trainTemp[i,1:Param_Data.Chunksize]
+        X_train[:,2,i]=X_trainTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
+    end 
+    for i in 1:size(X_testTemp)[1]  
+        X_test[:,1,i]=X_testTemp[i,1:Param_Data.Chunksize]
+        X_test[:,2,i]=X_testTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
+    end 
+    for i in 1:size(Y_trainTemp)[1]  
+        Y_train[Y_trainTemp[i]+1,i]=1
+    end 
+    for i in 1:size(Y_testTemp)[1]  
+        Y_test[Y_testTemp[i]+1,i]=1
+    end 
+    return (X_train,Y_train,X_test,Y_test)
+end 
+
+
+
+
 
 """ Generates a datbase based on the configuration stored in the JSON file `filename`
 """
-function generateDatabase(filename::String,E::String,S::String,C::String,RFF::String,name::String,Modulation::String,nbSignaux::Int;kw...)
+function generateDatabase(filename::String,E::String,S::String,C::String,RFF::String,name::String,Modulation::String,nbSignaux::Int,Param_Data;kw...)
     dict = loadConfiguration(filename)
-    return generateDatabase(dict,E,S,C,RFF,name,Modulation,nbSignaux;kw...)
+    return generateDatabase(dict,E,S,C,RFF,name,Modulation,nbSignaux,Param_Data;kw...)
 end
 
 """ Create a default constructor if no input structure is given. Otherwise, returns the structure
@@ -319,9 +604,9 @@ end
 
 """ Dispatch when dict is composed with symbols 
 """ 
-function generateDatabase(dict::AbstractDict{Symbol,Any},E,S,C,RFF,name,Modulation,nbSignaux;kw...)
+function generateDatabase(dict::AbstractDict{Symbol,Any},E,S,C,RFF,name,Modulation,nbSignaux,Param_Data;kw...)
     ds = string_dict(dict)
-    generateDatabase(ds,E,S,C,RFF,name,Modulation,nbSignaux;kw...)
+    generateDatabase(ds,E,S,C,RFF,name,Modulation,nbSignaux,Param_Data;kw...)
 end
 
 """ Generate a vector of RF impairments structure, based on the filename. The output can be used as input of generateDatabase. The file used as input should habe been generated from saveScenario, whose output is from generateDatabase
@@ -331,7 +616,9 @@ function reloadScenario(filename,RFF)
     dict = loadConfiguration(filename)
     nbR = length(dict)
     s_d_mismatch = Vector{RFImpairmentsModels.IQMismatch}(undef,nbR)
+ 
     s_d_cfo = Vector{RFImpairmentsModels.CFO}(undef,nbR)
+
     s_d_phaseNoise = Vector{RFImpairmentsModels.PhaseNoiseModel}(undef,nbR)
     if RFF == "PA_memory" || RFF == "all_impairments_memory"
         s_d_nonLinearPA = Vector{RiFyFi_VDG.Memory_PowerAmplifier}(undef,nbR)
@@ -347,12 +634,13 @@ function reloadScenario(filename,RFF)
         s_d_mismatch[ind] = initIQMismatch(_tmp["g"],_tmp["ϕ"])
         # CFO 
         _tmp = value["s_cfo"]
+       
         s_d_cfo[ind] = initCFO(_tmp["f"],_tmp["fs"],_tmp["ϕ"])
+        
         # Phase noise 
         _tmp = value["s_phaseNoise"]
         s_d_phaseNoise[ind] = initPhaseNoise(:Wiener,;σ2=_tmp["σ2"]) # FIXME Name in constrcutor (new version of RFImpairmentsModels)
         # Non linear PA
-        
         _tmp = value["s_nonLinearPA"]
         if RFF == "PA_memory" || RFF == "all_impairments_memory"
             
@@ -370,7 +658,7 @@ end
 
 """ Core signal generation, using a Dict for configuration. Each impairment config can be overwritted by custom config
 """
-function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulation,nbSignaux;
+function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulation,nbSignaux,Param_Data;
         s_d_mismatch::Union{Vector{RFImpairmentsModels.IQMismatch},Nothing} = nothing, # Force config for IQ Mismatch
         s_d_cfo::Union{Vector{RFImpairmentsModels.CFO},Nothing} = nothing ,             # Force config for CFO 
         s_d_phaseNoise::Union{Vector{RFImpairmentsModels.PhaseNoiseModel},Nothing}= nothing , # Force config for PN 
@@ -407,6 +695,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
         @info "ERREUR"
     end 
     size_symb = length(tmp)
+    @infiltrate
     # We split in independent burst of duration max_burst_size
     nb_bursts = nb_chunks ÷ max_burst_size +1
     nb_symb_per_bursts = max_burst_size * chunk_size ÷ size_symb +1
@@ -456,7 +745,6 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
 
         # --- Instantiate PA
         if RFF=="PA_memory" || RFF=="all_impairments_memory"
-            
             radio=r
             if r==1
                 radio =1
@@ -466,16 +754,20 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
                 radio =5  # 75
             elseif r==4
                 radio =6 # 35
+            elseif r==5
+                radio =75  # 75
+            elseif r==6
+                radio =35 # 35
             end 
 
             if E=="E1"
             s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA_memory,s_d_nonLinearPA,dict,1)
             else 
-            s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA_memory,s_d_nonLinearPA,dict,1)#radio)
+            s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA_memory,s_d_nonLinearPA,dict,radio)
             end
         else
             if E=="E1"
-            s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,1)
+                s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,1)
             else 
                 s_nonLinearPA    = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,r)
             end 
@@ -519,15 +811,17 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
                 x=x.*10 
             elseif Modulation == "SC"
                 x = singleCarrierTx(nb_symb_per_bursts)
+                x=x.*10 
             elseif Modulation == "LoRa"
                 SF = 7
                 BW =1 
                 Fs = 1
                 (x,_,_,_,_) = Gen_symb_SF(SF,nb_symb_per_bursts,BW,Fs,1)
+                x=x.*10 
             else 
                 @info "ERREUR"
             end 
-            nbIQperBurst =size_symb*nb_symb_per_bursts
+            nbIQperBurst = size_symb*nb_symb_per_bursts
             X[(k-1)*nbIQperBurst+1:k*nbIQperBurst,r] = x
             # -------------------------------------------
             # -- Tx impairments avec seed Fingerprint
@@ -554,7 +848,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
                 # Add CFO 
                 RFImpairmentsModels.addCFO!(x,s_cfo)
             elseif RFF == "dynamic_cfo"
-                add_dynamic_CFO!(x,s_cfo)
+                add_dynamic_CFO!(x,s_cfo,Param_Data.dyn_value)
             elseif RFF == "PA_memory"
                 # Non linear PA memory
                 if E == "E1"
@@ -570,17 +864,18 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
                         x = addNonLinearPA(x,s_nonLinearPA)
                     else
                         y = addNonLinearPA(x,s_nonLinearPA)
-                     #  PlotingAMAM_Saleh(x[1:2000],y[1:2000],RFF,r,E,S,C,name)
+                    #   PlotingAMAM_Saleh(x[1:2000],y[1:2000],RFF,r,E,S,C,name)
                         x = y
                     end 
             # -------------------------------------------
             # --- To study the Conglomerate impact of impairments
             # -------------------------------------------
             elseif RFF == "all_impairments_dynamic_cfo"
+                @info "dynamic CFO"
                 # All Impairments 
                 addIQMismatch!(x,s_mismatch)
                 addPhaseNoise!(x,s_phaseNoise) # Imperfection Dynamique 
-                add_dynamic_CFO!(x,s_cfo)
+                add_dynamic_CFO!(x,s_cfo,Param_Data.dyn_value)
                 if RFF=="all_impairments_memory"
                   x=addNonLinearPA_memory(x,s_nonLinearPA,r)
                 else 
@@ -589,7 +884,13 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,Modulati
             else # All Impairments 
                 addIQMismatch!(x,s_mismatch)
                 addPhaseNoise!(x,s_phaseNoise) # Imperfection Dynamique 
-                RFImpairmentsModels.addCFO!(x,s_cfo)
+                @info "stat" 
+              #  if nbSignaux == 900
+              RFImpairmentsModels.addCFO!(x,s_cfo)
+              #  else 
+              #      add_dynamic_CFO!(x,s_cfo)
+              #  end 
+                
                 if RFF=="all_impairments_memory"
                     x=addNonLinearPA_memory(x,s_nonLinearPA,r)
                 else 
@@ -787,6 +1088,10 @@ function loadConfiguration(filename)
     end
     return dict 
 end
+
+
+
+
 
 
 end

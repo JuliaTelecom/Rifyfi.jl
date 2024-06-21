@@ -6,3 +6,4 @@ Configurations/
 run/
 src/script_ICC_A.jl
 src/script.jl
+src/script_ICC_A_copy.jl

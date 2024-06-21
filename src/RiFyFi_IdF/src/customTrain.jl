@@ -69,7 +69,7 @@ end
 
 
 
-function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation)
+function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation,dataTrain_dyn=0,dataTest_dyn= 0)
     # ----------------------------------------------------
     # --- CPU or GPU
     # ---------------------------------------------------- 
@@ -116,6 +116,7 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     ################################################################################
     trainf1 = Float32[]
     testf1 = Float32[] 
+    testf1_dyn = Float32[] 
     ta=0
     epoch =0
     Random.seed!(Param_Network.Seed_Network)
@@ -138,6 +139,14 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
         _f1 = F1Score(dataTest,model,device)
         @info _f1  
         push!(testf1,_f1)
+        if dataTest_dyn != 0
+            @info "hee"
+            _f1 = F1Score(dataTest_dyn,model,device)
+            @info _f1  
+            push!(testf1_dyn,_f1)
+        else 
+            push!(testf1_dyn,0)
+        end 
         # A Commenter si besoin #########################################################
         if epoch % Param_Network.Train_args.infotime == 0
             (tl,ta,el,ea) = report(epoch)
@@ -152,7 +161,7 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     Param_Network.Train_args.timings = cumsum(Param_Network.Train_args.timings;dims=1)
     # Write timings and accuracy in a file 
     open("$(savepath_model)/F1_Score_$(DeviceName)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Modulation).csv","w") do io 
-        arr = [Param_Network.Train_args.timings[1:epoch] trainf1 testf1 trainLoss testLoss]
+        arr = [Param_Network.Train_args.timings[1:epoch] trainf1 testf1 testf1_dyn trainLoss testLoss]
         writedlm(io,round.(arr;digits=4),';')
     end
     # --- Copy NN model to CPU 

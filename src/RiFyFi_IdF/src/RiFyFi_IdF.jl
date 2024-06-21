@@ -22,6 +22,8 @@ export initResNet
 export initGDA
 export initFeng
 export initDense
+export DenseEmma
+export F1Score
 
 function ResNet(x,nbRadioTx,dr)
     m = Chain(
@@ -242,6 +244,44 @@ m = Chain(
     return (m,loss)
 end 
 
+
+function DenseEmma(x,nbRadioTx,dr)
+    m = Chain(
+            #x -> reshape(x, (size(x)[1], 2, 1, size(x)[3])),
+            Flux.flatten,
+            #Dropout(dr),
+            Dense(512, 15),
+            leakyrelu,
+            #leakyrelu,
+            Dense(15, 10),
+            selu,
+            Dense(10,nbRadioTx),
+            Flux.softmax
+        )
+        testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
+        loss(ŷ, y)= crossentropy(ŷ, y)
+        return (m,loss)
+    end 
+
+#=
+    function DenseEmma(x,nbRadioTx,dr)
+        m = Chain(
+                #x -> reshape(x, (size(x)[1], 2, 1, size(x)[3])),
+                Flux.flatten,
+                #Dropout(dr),
+                Dense(512, 1000),
+                Dropout(dr),
+                leakyrelu,
+                #leakyrelu,
+                Dense(1000,nbRadioTx),
+                Flux.softmax
+            )
+            testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
+            loss(ŷ, y)= crossentropy(ŷ, y)
+            return (m,loss)
+        end 
+=#
+
 function initGDA(x,nbRadioTx,dr)
    # dr = 0.5 #Dropout rate
     m = Chain(
@@ -324,5 +364,3 @@ export Args_construct
 
 
 end 
-
-

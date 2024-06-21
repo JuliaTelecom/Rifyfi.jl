@@ -17,6 +17,7 @@ Base.@kwdef mutable struct Data_Synth
     seed_dataTest::Int = 1234
     seed_modelTest::Int = 2345
     Modulation::String = "OFDM" # define the Modulation
+    dyn_value::Int = 0
     Augmentation_Value = Data_Augmented_construct() 
 end
 
@@ -129,10 +130,16 @@ function Data_Synth_construct(; kwargs...)
         Modulation = ""
     end 
 
+    if haskey(kwargs, :dyn_value)
+        dyn_value = kwargs[:dyn_value]
+    else 
+        dyn_value = 0
+    end 
+
     if haskey(kwargs, :Augmentation_Value)
         Augmentation_Value = kwargs[:Augmentation_Value]
     else 
         Augmentation_Value = Data_Augmented_construct() 
     end
-return Data_Synth(name,nameModel,nbTx,nbSignals,Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,Augmentation_Value)
+return Data_Synth(name,nameModel,nbTx,nbSignals,Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,dyn_value,Augmentation_Value)
 end

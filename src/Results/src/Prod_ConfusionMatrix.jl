@@ -61,7 +61,7 @@ end
     dataAug = "sans" or "OfflineV1" 
 """
 
-function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="",Param_Data_test=Param_Data)
+function Confusion_Matrix_CSV(Param_Data,Param_Network,Param_Data_test,savepathbson="")
     if Param_Network.Train_args.use_cuda ==true 
         hardware1 = "GPU"
     else 
@@ -78,14 +78,12 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="",Param_Dat
     allAcc = Float64[]
         
     res = RiFyFi_IdF.loadCNN("$(savepath_model)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Param_Data.Modulation).bson")
-    #res =RiFyFi_IdF.loadCNN("$(savepath_model)/model_new.bson")
 
     model = res.model
     testmode!(model, true)  # We are in test mode, with no dropout 
     (moy,std_val) = (nothing,nothing)
     allAccuracy = Float64[]
-   
-    (_,_,X_test,Y_test) =loadCSV_Synthetic(Param_Data_test) 
+    (_,_,X_test,Y_test) = RiFyFi_VDG.loadCSV_Synthetic(Param_Data_test) 
 
     
     if Param_Network.Train_args.use_cuda
@@ -95,8 +93,11 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="",Param_Dat
     end
     dataTest  = Flux.Data.DataLoader((X_test, Y_test), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
     l̂,l = inference(model,dataTest,device)
-    #acc = getAccuracy(l̂,l) 
-    #@info acc
+    acc = getAccuracy(l̂,l) 
+    @info acc
+    
+
+
     confMatrix = confusionMatrix(l̂,l,Param_Data.nbTx)
     plt = plotConfusionMatrix(confMatrix )
 
@@ -115,6 +116,44 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson="",Param_Dat
             end 
         end
      MainPlottingMatrix_Latex(file,Param_Data.E,Param_Data.S,Param_Data.C,Param_Network.Networkname,Param_Data.RFF,Param_Data.Chunksize,Param_Network.Train_args.batchsize,Param_Data.nbTx)
+
+
+    ################################################
+    # ------ CFO dynamic --------
+    ################################################
+
+    if Param_Data.RFF == "all_impairments_dynamic_cfo"
+        (_,_,X_test_dyn,Y_test_dyn) = RiFyFi_VDG.loadCSV_Synthetic_dynCFO(Param_Data_test) 
+        if Param_Network.Train_args.use_cuda
+            device= gpu
+        else
+            device =cpu
+        end
+        dataTest_dyn  = Flux.Data.DataLoader((X_test_dyn, Y_test_dyn), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
+        l̂,l = inference(model,dataTest_dyn,device)
+        acc = getAccuracy(l̂,l) 
+        
+        @info acc
+        confMatrix = confusionMatrix(l̂,l,Param_Data.nbTx)
+        plt = plotConfusionMatrix(confMatrix )
+
+        savepath_result = "Results/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
+
+        !ispath(savepath_result) && mkpath(savepath_result)
+            Temp=zeros(1,Param_Data.nbTx)
+            if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+                file="$(savepath_result)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_seed_$(Param_Network.Seed_Network)_dyn.csv"
+            else 
+                file="$(savepath_result)/confMatrix_$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)_seed_$(Param_Network.Seed_Network)_dyn.csv"
+            end 
+            open(file,"w") do io
+                for i in 0:size(confMatrix,1)-1
+                    Temp[1,:]  = round.(confMatrix[i+1,:]*100;digits=1)
+                    writedlm(io,[vcat((Temp))],';')  #Ecriture Re-Im
+                end 
+            end
+        MainPlottingMatrix_Latex(file,Param_Data.E,Param_Data.S,Param_Data.C,Param_Network.Networkname,Param_Data.RFF,Param_Data.Chunksize,Param_Network.Train_args.batchsize,Param_Data.nbTx)
+    end 
 end
 
 

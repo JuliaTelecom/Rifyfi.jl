@@ -15,6 +15,7 @@ using Random
 using Flux
 using CSV
 using DataFrames
+using Infiltrator
 gr()  
 include("../../LatexConfusionMatrix/src/LatexConfusionMatrix.jl")
 using .LatexConfusionMatrix
@@ -29,7 +30,7 @@ using .RiFyFi_VDG
 include("../../RiFyFi_IdF/src/RiFyFi_IdF.jl")
 using .RiFyFi_IdF
 
-function main(Param_Data,Param_Network,Type_Resuts,Table_Seed_Network,savepathbson,Param_Data_test)
+function main(Param_Data,Param_Network,Type_Resuts,savepathbson,Param_Data_test,Table_Seed_Network)
 
     if Type_Resuts == "F1_score"
         F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson)
@@ -38,7 +39,7 @@ function main(Param_Data,Param_Network,Type_Resuts,Table_Seed_Network,savepathbs
         Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
     
     elseif Type_Resuts == "Confusion_Matrix"
-        Confusion_Matrix_CSV(Param_Data,Param_Network,savepathbson,Param_Data_test )
+        Confusion_Matrix_CSV(Param_Data,Param_Network,Param_Data_test,savepathbson )
     
     end 
 
@@ -53,13 +54,13 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
         hardware1 ="CPU"
     end 
     if savepathbson == ""
-        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-            savepathbson = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel" ||Param_Data.Augmentation_Value.augmentationType == "sans"
+            savepathbson = "run/Synth/$(Param_Data.Modulation)/Journal/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware1)"
         else 
             savepathbson = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
         end 
     end 
-    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel" ||Param_Data.Augmentation_Value.augmentationType == "sans"
         savename ="$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"
     else 
         savename ="$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
@@ -84,7 +85,7 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
     for i =1 :1: size(Table_Seed_Network,1)
         Param_Network.Seed_Network= Table_Seed_Network[i]
         name = savename
-        Scenario ="$(savepathbson)/F1_Score_$(hardware1)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Param_Data.Modulation).csv"
+        Scenario ="$(savepathbson)/F1_Score_$(hardware1)_seed_$(Param_Network.Seed_Network).csv"
         delim=';'
         nameBase = split(Scenario,".")[1]
         #  ----------------------------------------------------
@@ -98,8 +99,10 @@ function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson
         Score_5[:,3]=matrice_5[:,3]
         Score_5[:,4]=matrice_5[:,4]
         Score_5[:,5]=matrice_5[:,5]
-       
-        @pgf push!(a,Plot({color=dictColor[i],mark=dictMarker[i]},Table([(Score_5[:,1].-Score_5[1,1]),Score_5[:,2]])))
+        K=(1:1:size(matrice_5,1))
+      #  @pgf push!(a,Plot({color=dictColor[i],mark=dictMarker[i]},Table([(Score_5[:,1].-Score_5[1,1]),Score_5[:,2]])))
+        @pgf push!(a,Plot({color=dictColor[i],mark=dictMarker[i]},Table([K[:],Score_5[:,2]])))
+
         @pgf push!(a, LegendEntry("Seed $(i)")) # Train)
       
     end
@@ -118,7 +121,7 @@ function Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
     else 
         hardware1 ="CPU"
     end 
-    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel" ||Param_Data.Augmentation_Value.augmentationType == "sans"
         name= "$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.name)"
         else 
         name ="$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.name)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
@@ -133,7 +136,7 @@ function Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
 
     for i =1 : 1 : size(Table_Seed_Network,1)
         Param_Network.Seed_Network = Table_Seed_Network[i]
-        Scenario ="$(savepath)/$(name)/$(hardware1)/F1_Score_$(hardware1)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).csv"
+        Scenario ="$(savepath)/$(name)/$(hardware1)/F1_Score_$(hardware1)_seed_$(Param_Network.Seed_Network).csv"
 
         delim=';'
         nameBase = split(Scenario,".")[1]

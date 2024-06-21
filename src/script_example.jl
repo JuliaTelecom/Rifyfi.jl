@@ -8,15 +8,15 @@ using RiFyFi.RiFyFi_VDG
 using RiFyFi.Results
 
 # Parameters DataBase Synth
-name= "Example_Database" 
+name= "Test" 
 nameModel= name
 nbRadioTx=6 # Number of transmitters
 NbSignals=1000 # number of signals per transmitters
 Chunksize = 256 # number of IQ samples per signals
 features="IQsamples" 
-E="E3" # Use E3 for adding fingerprint 
-S="S1" # Use S1 for modelling a Preamble mode, S2 for MAC address and S3 for payload mode
-C="C2" # Use C1 for perfect SNR, C2_0dB - C2_30dB to add Gaussian noise
+E="E1" # Use E3 for adding fingerprint 
+S="S3" # Use S1 for modelling a Preamble mode, S2 for MAC address and S3 for payload mode
+C="C1" # Use C1 for perfect SNR, C2_0dB - C2_30dB to add Gaussian noise
 RFF="all_impairments"  # Use all_impairments to modeled the complete chaine, or use PA to model only the Power Amplifier, PN for Phase Noise, imbalance for IQ imbalance or cfo for carrier frequency offset.
 Normalisation=true # Use true to normalize the database 
 pourcentTrain = 0.9 # 90 % for train and 10% for test 
@@ -34,13 +34,14 @@ if S == "S1" || S == "S2"
 else 
     seed_dataTest = 9999246912 * 100000000
 end 
-Modulation = "SC" # SC for single carrier modulation or OFDM or LoRa
+Modulation = "OFDM" # SC for single carrier modulation or OFDM or LoRa
 
 # Parameters for Data Augmentation
 nb_Augment= 1  # Define the number of channel for each transmitter
 augmentationType="No_channel" # use No_channel, augment or same_channel
 Channel="etu" 
 Channel_Test="etu"
+dyn_value = 0
 
 
 # Network Parameters
@@ -61,9 +62,11 @@ savepathbson=""
 
 
 Augmentation_Value = Augmentation.Data_Augmented_construct(augmentationType=augmentationType,nb_Augment=nb_Augment,Channel=Channel,Channel_Test=Channel_Test)
-Param_Data = RiFyFi.RiFyFi_VDG.Data_Synth(name,nameModel,nbRadioTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,Augmentation_Value)
-RiFyFi_VDG.setSynthetiquecsv(Param_Data)
 
+Param_Data = RiFyFi.RiFyFi_VDG.Data_Synth(name,nameModel,nbRadioTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Modulation,dyn_value,Augmentation_Value)
+RiFyFi.RiFyFi_VDG.setSynthetiquecsv(Param_Data)
+
+#=
 Train_args = RiFyFi_IdF.Args(η = η, dr=dr, epochs= epochs, batchsize=batchsize)
 Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSignals,Seed_Network,Train_args) 
 RiFyFi.main(Param_Data,Param_Network)     
@@ -73,7 +76,7 @@ RiFyFi.main(Param_Data,Param_Network)
 Results.main(Param_Data,Param_Network,"F1_score",Table_Seed_Network,savepathbson,Param_Data)
 Results.main(Param_Data,Param_Network,"Confusion_Matrix",Table_Seed_Network,savepathbson,Param_Data)
 
-
+=#
 
 
 
