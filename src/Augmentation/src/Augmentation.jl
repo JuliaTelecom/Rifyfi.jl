@@ -5,14 +5,23 @@ using Random
 using DigitalComm
 using DSP
 using Distributed
+using Infiltrator
 include("Struct_Augmentation.jl")
 export Data_Augmented
 export Data_Augmented_construct
 export Add_diff_Chanel_train_test
 export getChannel
-export AddChannelTest
+export Add_Noise_Rxside
+
+function Add_Noise_Rxside(x,s_noise)
+    out,_ = addNoise(x,s_noise)
+    return out
+end 
+
+
 
 function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, pourcentAugment, nbRadioTx,seed,burstSize)
+    
     nbChunk = Int(size(bigMat,3)  )
     nbsignauxParRadio = Int(nbChunk/nbRadioTx)
     (snrRange,cfoRange,τₘ,nbTaps) = AugmentationParameters()
@@ -46,7 +55,7 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
             subSigAugmented = zeros(ComplexF32,Int(ChunkSize*burstSizeTemp))
             subSig = @views sig[  Int((iN-1)*ChunkSize*burstSize) .+ (1:Int(ChunkSize*burstSizeTemp))]
             for j = 1 : 1 : pourcentAugment  
-                Random.seed!(seed * iR + j )   
+                Random.seed!(seed * iR + j )    
                 #--- Data augmentation 
                 # First get unique impairment model
                 σ   = choose(snrRange)
@@ -60,6 +69,7 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
                 end
                 # Augment the data
                 signalAugmentation!(subSigAugmented,channel,"OfflineV1",subSig,cir,f,σ)
+
                 sig_real= IQsample_real(subSigAugmented)
                 sig_imag = IQsample_ima(subSigAugmented)
                 # --- Populate segment 
@@ -247,92 +257,4 @@ end
 
 
 
-
-function AddChannelTest(bigMat, bigLabels, N, channel, ChunkSize, pourcentAugment, nbRadioTx,seed,burstSize)
-    nbChunk = Int(size(bigMat,3)  )
-    nbsignauxParRadio = Int(nbChunk/nbRadioTx)
-    (snrRange,cfoRange,τₘ,nbTaps) = AugmentationParameters()
-    Augmented_MatTemp = zeros(Float32,ChunkSize,2,nbChunk*pourcentAugment)
-    Augmented_Labels = zeros(Float32,size(bigLabels,1),size(bigLabels,2)*pourcentAugment)
-    concatVec = zeros(ComplexF32,ChunkSize*nbChunk)
-    concaten!(concatVec,1:nbChunk,bigMat,ChunkSize)
-    concatMat = reshape(concatVec,Int(ChunkSize*nbChunk/nbRadioTx),nbRadioTx)
-    indice = 1
-    #concatMat = bigMat #reshape(concatVec,Int(ChunkSize*nbChunk/nbRadioTx),nbRadioTx)
-    @info "Create set with augmentation ..."     
-    Radio=0
-    for iR = 1 : 1 : nbRadioTx 
-        if iR == 1 
-            Radio = 5
-        elseif iR == 2
-            Radio = 2 
-        elseif iR == 3
-            Radio = 1 
-        elseif iR == 4
-            Radio = 6 
-        elseif iR == 5
-            Radio = 4
-        elseif iR == 6
-            Radio = 3 
-        end
-        @info Radio
-        burstSizeTemp = burstSize
-        # --- Signal associated to radio 
-        sig = @views concatMat[:,iR] # 256 * nbBurstParRadio = nbsignauxParRadio
-        nbBurstParRadio = Int(floor(size(sig,1)/(burstSizeTemp*ChunkSize)) +1)
-        # --- Call the augmenting // feeding job 
-        # donné augmentée
-        X_mp = zeros(Float32,ChunkSize,2,Int(pourcentAugment*N))
-        Y_mp = zeros(Float32,nbRadioTx,Int(pourcentAugment*N))
-        # -- Working vector to augment data
-        sigAugmented = zeros(ComplexF32,Int(ChunkSize*N))
-        # --- Iterative data augmentation chunk après chunk
-        for iN = 1 : 1 : Int(nbBurstParRadio)
-
-            # Integrer le pourcentage d'augmentation 
-            if iN == nbBurstParRadio
-                burstSizeTemp = nbsignauxParRadio- (iN-1)*burstSize
-            end
-            subSigAugmented = zeros(ComplexF32,Int(ChunkSize*burstSizeTemp))
-            subSig = @views sig[  Int((iN-1)*ChunkSize*burstSize) .+ (1:Int(ChunkSize*burstSizeTemp))]
-            for j = 1 : 1 : pourcentAugment  
-                Random.seed!(seed * Radio + j )   
-                #--- Data augmentation 
-                # First get unique impairment model
-                σ   = choose(snrRange)
-                f   = choose(cfoRange) / 5e6 # Normalized CFO, wrt sampling rate 
-                if channel == "multipath"
-                    cir = getChannel(τₘ;model=:multipath,nbTaps)
-                elseif channel == "etu"
-                    cir = getChannel(τₘ;model=:etu,nbTaps)
-                elseif channel == "eva"
-                    cir = getChannel(τₘ;model=:eva,nbTaps)
-                end
-                # Augment the data
-                signalAugmentation!(subSigAugmented,channel,"OfflineV1",subSig,cir,f,σ)
-                sig_real= IQsample_real(subSigAugmented)
-                sig_imag = IQsample_ima(subSigAugmented)
-                # --- Populate segment 
-                for n = 1 : 1 : Int(burstSizeTemp)    
-                    X_mp[:,1,indice+n-1] = sig_real[Int(ChunkSize*(n-1))+1:Int(ChunkSize*n)]
-                    X_mp[:,2,indice+n-1] = sig_imag[Int(ChunkSize*(n-1))+1:Int(ChunkSize*n)]
-                    Y_mp[iR ,indice+n-1] = 1
-                end
-                indice+=burstSizeTemp                 
-            end
-        end
-        indice = 1
-        Augmented_MatTemp[:,:,(nbsignauxParRadio*pourcentAugment)*(iR-1)+1:(nbsignauxParRadio*pourcentAugment)*(iR-1)+nbsignauxParRadio*pourcentAugment] = X_mp
-        Augmented_Labels[:,(nbsignauxParRadio*pourcentAugment)*(iR-1)+1:(nbsignauxParRadio*pourcentAugment)*(iR-1)+nbsignauxParRadio*pourcentAugment] = Y_mp
-    end
-    X = Augmented_MatTemp
-    Y = Augmented_Labels
-# --- Ajout de la Normalisation si besoin
-return (X,Y)
-end
-
-
-
-
-
-end
+end # module

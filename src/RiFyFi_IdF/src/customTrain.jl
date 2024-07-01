@@ -7,6 +7,8 @@ function eval_loss_accuracy(loader, model, loss, device)
     acc = 0
     ntot = 0
     for (x, y) in loader
+     #   x = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
+
         x, y = x |> device, y |> device
       #  ŷ = model(reshape(x, (256,2,1,(size(x))[3])))    
         ŷ = model(x)
@@ -30,6 +32,8 @@ function F1Score(loader,model,device=cpu)
     fn = zeros(nbClass) # false negative
     for (x, y) in loader
         # Load to CPU
+     #   x = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
+
         xd = x |> device
         # Train, bring back and decision
       #  ŷ = model(reshape(xd, (256,2,1,(size(xd))[3]))) |> cpu  |> onecold
@@ -69,7 +73,7 @@ end
 
 
 
-function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation,dataTrain_dyn=0,dataTest_dyn= 0)
+function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # ----------------------------------------------------
     # --- CPU or GPU
     # ---------------------------------------------------- 
@@ -85,6 +89,7 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     end
 
     # --- Loading model
+   
     model = Param_Network.model |> device
     
     @info "Chosen NN model: $(num_params(model)) trainable params"    
@@ -96,6 +101,8 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     # --- Closure for performance evaluation
     # --- Comment if you are on specific hardware 
     # ---------------------------------------------------- 
+
+    
     function report(epoch)
         train = eval_loss_accuracy(dataTrain, model, Param_Network.loss, device)
         test = eval_loss_accuracy(dataTest, model,Param_Network.loss, device)        
@@ -108,7 +115,7 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     # ---------------------------------------------------- 
     @info "Start Training"
     ###### Comment if need ###################################################
-    report(0) 
+    #report(0) 
     trainLoss = Float32[]
     trainAcc= Float32[]
     testLoss  = Float32[]
@@ -116,7 +123,6 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     ################################################################################
     trainf1 = Float32[]
     testf1 = Float32[] 
-    testf1_dyn = Float32[] 
     ta=0
     epoch =0
     Random.seed!(Param_Network.Seed_Network)
@@ -124,7 +130,8 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
         epoch = epoch+1
         Param_Network.Train_args.tInit = time() # Set up time of origin
         # Train 
-        @showprogress for (x, y) in dataTrain   
+        @showprogress for (x, y) in dataTrain  
+           
             x, y = x |> device, y |> device        
             gs = Flux.gradient(ps) do
                 ŷ = model(x)
@@ -139,14 +146,6 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
         _f1 = F1Score(dataTest,model,device)
         @info _f1  
         push!(testf1,_f1)
-        if dataTest_dyn != 0
-            @info "hee"
-            _f1 = F1Score(dataTest_dyn,model,device)
-            @info _f1  
-            push!(testf1_dyn,_f1)
-        else 
-            push!(testf1_dyn,0)
-        end 
         # A Commenter si besoin #########################################################
         if epoch % Param_Network.Train_args.infotime == 0
             (tl,ta,el,ea) = report(epoch)
@@ -160,8 +159,8 @@ function customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Modulation
     # Timings are calculated per eopch, we want complete time 
     Param_Network.Train_args.timings = cumsum(Param_Network.Train_args.timings;dims=1)
     # Write timings and accuracy in a file 
-    open("$(savepath_model)/F1_Score_$(DeviceName)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Modulation).csv","w") do io 
-        arr = [Param_Network.Train_args.timings[1:epoch] trainf1 testf1 testf1_dyn trainLoss testLoss]
+    open("$(savepath)/F1_Score_$(DeviceName)_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).csv","w") do io 
+        arr = [Param_Network.Train_args.timings[1:epoch] trainf1 testf1 trainLoss testLoss]
         writedlm(io,round.(arr;digits=4),';')
     end
     # --- Copy NN model to CPU 

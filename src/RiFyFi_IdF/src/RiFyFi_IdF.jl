@@ -12,19 +12,19 @@ using Statistics
 using DataFrames
 using DelimitedFiles 
 using BSON
-
+using cuDNN
+using Infiltrator
 export inference
-export initAlexNet
 export loadCNN
-export initShen
-export initMerchant2021A
-export initResNet
-export initGDA
-export initFeng
-export initDense
-export DenseEmma
-export F1Score
 
+export initRoy
+export initAlexNet
+export initGDA
+export TripleDense
+export initNewCNN
+export initWiSig
+
+#=
 function ResNet(x,nbRadioTx,dr)
     m = Chain(
         Chain([
@@ -186,8 +186,55 @@ function initShen(x,nbRadioTx,dr)
     loss(ŷ, y)= crossentropy(ŷ, y)
     return (m,loss)
 end
+=#
 
 
+
+function initWiSig(x,nbRadioTx,dr)# tiré de WiSig  
+m = Chain(
+         #   x -> reshape(x, (size(x)[1], 2, 1, size(x)[3])),
+            Conv((3,2), 1 => 8, pad=SamePad(), relu),
+            MaxPool((2,1)),
+            Conv((3,2), 8 => 16, pad=SamePad(), relu),
+            MaxPool((2,1)),
+            Conv((3,2), 16 => 16, pad=SamePad(), relu),
+            MaxPool((2,1)),
+            Conv((3,1), 16 => 32, pad=SamePad(), relu),
+            MaxPool((2,1)),
+            Conv((3,1), 32 => 16, pad=SamePad(), relu),
+            MaxPool((2,1)),
+            Flux.flatten,
+            Dense(256, 100, relu),
+            Dense(100, 80, relu),
+            Dropout(dr),
+            Dense(80,nbRadioTx),
+            Flux.softmax
+        )
+        testmode!(m, false) # Important sinon le CNN ne prend pas en compte le drop out = surapprentissage
+        loss(ŷ, y)= crossentropy(ŷ, y)
+        return (m,loss)
+end
+
+function initNewCNN(x,nbRadioTx,dr)# tiré de Oracle 
+    m = Chain(
+        #----------------------------------------------------
+        # --- Convolutionnal layers
+        # ---------------------------------------------------- 
+        # Bloc 1 
+        Conv((7,), 2 => 50, pad=SamePad(), relu),
+        Conv((7,), 50 => 50, pad=SamePad(), relu),
+        Flux.flatten,
+        Dense(50*x, 256, relu), # 1024 = 8 * 128
+        Dropout(dr),
+        Dense(256, 80, relu),
+        Dropout(dr),
+        Dense(80,nbRadioTx), # Couche non indiquée sur la doc mais obligatoire pour avoir un Softmax correct
+        softmax
+       )
+    testmode!(m, false) # Important sinon le CNN ne prend pas en compte le drop out = surapprentissage
+    loss(ŷ, y)= crossentropy(ŷ, y)
+    return (m,loss)
+end
 
 function initAlexNet(x,nbRadioTx,dr)
     #dr = 0 #Dropout rate
@@ -232,69 +279,55 @@ function initAlexNet(x,nbRadioTx,dr)
 end
 
 
-function initDense(x,nbRadioTx,dr)
-m = Chain(
-    Flux.flatten,
-    Dense(512 => 3, tanh),   # activation function inside layer
-    BatchNorm(3),
-    Dense(3 => nbRadioTx),
-    softmax)  
+function TripleDense(x,nbRadioTx,dr)
+    m = Chain(
+        Flux.flatten,
+        Dense(x*2, 100),
+        Dropout(dr),
+        leakyrelu,
+        Dense(100, 64),
+        Dropout(dr),
+        leakyrelu,
+        Dense(64,nbRadioTx),
+        Flux.softmax
+        )
     testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
     loss(ŷ, y)= crossentropy(ŷ, y)
     return (m,loss)
 end 
 
 
-function DenseEmma(x,nbRadioTx,dr)
+function initRoy(x,nbRadioTx,dr)
     m = Chain(
-            #x -> reshape(x, (size(x)[1], 2, 1, size(x)[3])),
-            Flux.flatten,
-            #Dropout(dr),
-            Dense(512, 15),
-            leakyrelu,
-            #leakyrelu,
-            Dense(15, 10),
-            selu,
-            Dense(10,nbRadioTx),
-            Flux.softmax
+        Flux.flatten,
+        Dense(x*2, 1024),
+        Dropout(dr),
+       # leakyrelu,
+        Dense(1024, 512),
+        Dropout(dr),
+        #leakyrelu,
+        Dense(512,nbRadioTx),
+        Flux.softmax
         )
-        testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
-        loss(ŷ, y)= crossentropy(ŷ, y)
-        return (m,loss)
-    end 
+    testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
+    loss(ŷ, y)= crossentropy(ŷ, y)
+    return (m,loss)
+end 
 
-#=
-    function DenseEmma(x,nbRadioTx,dr)
-        m = Chain(
-                #x -> reshape(x, (size(x)[1], 2, 1, size(x)[3])),
-                Flux.flatten,
-                #Dropout(dr),
-                Dense(512, 1000),
-                Dropout(dr),
-                leakyrelu,
-                #leakyrelu,
-                Dense(1000,nbRadioTx),
-                Flux.softmax
-            )
-            testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
-            loss(ŷ, y)= crossentropy(ŷ, y)
-            return (m,loss)
-        end 
-=#
 
 function initGDA(x,nbRadioTx,dr)
    # dr = 0.5 #Dropout rate
     m = Chain(
             Conv((10,), 2 => 64, pad=SamePad(), relu),
-           # MaxPool((2,)),
+            MaxPool((2,)),
             Conv((10,), 64 => 32, pad=SamePad(), relu),
-           # MaxPool((2,)),
+            MaxPool((2,)),
             Conv((10,), 32 => 16, pad=SamePad(), relu),
-           # MaxPool((2,)),
+            MaxPool((2,)),
             Flux.flatten,
-            Dense(4096,64),
+            Dense(512,64),
             Dense(64,4),
-            Dense(4,x),
+            Dense(4,nbRadioTx),
             Flux.softmax
              )
     testmode!(m, false) # Important sinon le CNN ne prend pas en compte le drop out = surapprentissage
@@ -306,8 +339,6 @@ end
 
 function loadCNN(cnnPath)
     # --- Loading data 
-   # dict = BSON.parse(cnnPath)
-    
     dict = BSON.load(cnnPath,@__MODULE__) 
     # --- Exporting variables 
     model     = dict[:model]
@@ -315,7 +346,6 @@ function loadCNN(cnnPath)
     trainAcc  = dict[:trainAcc]
     testLoss  = dict[:testLoss]
     trainLoss = dict[:trainLoss]
-
     #=moy = 0 
         std = 1
     try 
@@ -342,17 +372,23 @@ function inference(model,dataset,device)
     mm = model |> device 
     Ŷ = Int[]
     Y = Int[]
+    
     for (x,label) in dataset
-       # xG = reshape(x, (256,2,1,(size(x))[3])) |> device # To GPU 
+      #  xG = reshape(x, (256,2,1,(size(x))[3])) |> device # To GPU 
+      #  xG = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
+
         xG = x |> device # To GPU 
         r = mm(xG) |> cpu # Infer model in GPU. Output is soft matrix 
         y = onecold(label)
         ŷ = onecold(r) # Hard decision to get radio label 
         push!(Ŷ,ŷ...)
         push!(Y,y...)
+        
     end
         return Ŷ,Y
 end
+
+
 
 include("customTrain.jl")
 export customTrain!
@@ -361,6 +397,6 @@ export Network_struct
 export Args
 export Args_construct
 
-
-
 end 
+
+

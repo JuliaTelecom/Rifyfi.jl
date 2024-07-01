@@ -2,6 +2,9 @@
 """ Create a configuration for IQ mismatch for a given radio based on configuation in dict 
 """
 function setup_IQMismatch(dict,r)
+    # Seed 
+    # seed_models     = @loadKey dict "seed_models" 12345
+    # Random.seed!(seed_models + r + 10)
     # --- Loading config
     with_iq_mismatch        = @loadKey dict "with_iq_mismatch" false
     if !with_iq_mismatch
@@ -23,6 +26,9 @@ end
 """ Create a configuration for CFO for a given radio based on configuation in dict 
 """
 function setup_CFO(dict,r)
+    # Seed 
+    # seed_models     = @loadKey dict "seed_models" 12345
+    # Random.seed!(seed_models + r + 100)
     
     with_cfo = @loadKey dict "with_cfo" false 
     sampling_rate = @loadKey dict "sampling_rate" 1
@@ -36,10 +42,6 @@ function setup_CFO(dict,r)
         return initCFO(0,sampling_rate)
     end
 end
-
-
-
-
 
 """ Create a configuration for phase noise for a given radio based on configuation in dict 
 """
@@ -64,6 +66,9 @@ end
 """ Create a configuration for AWGN for a given radio based on configuation in dict 
 """
 function setup_awgn(dict,r,k)
+    # Seed 
+    # seed_models     = @loadKey dict "seed_models" 12345
+    # Random.seed!(seed_models + r + k + 2000)
     with_noise = @loadKey dict "with_awgn" false
     if with_noise 
         awgn_snr_base = @loadKey dict "awgn_snr_base" 80
@@ -76,6 +81,9 @@ function setup_awgn(dict,r,k)
 end
 
 function setup_nonLinearPA(dict,indexRadio)
+    # Seed 
+    # seed_models     = @loadKey dict "seed_models" 12345
+    # Random.seed!(seed_models + indexRadio + 3000)
     with_nonLinearPA = @loadKey dict "with_nonLinearPA" false 
     if with_nonLinearPA
         # pa_models = @loadKey dict "nonLinearPA_models" :Linear
@@ -105,6 +113,9 @@ end
 
 function setup_nonLinearPA_control(dict,indexRadio)
     pourcentage =0.1
+    # Seed 
+    # seed_models     = @loadKey dict "seed_models" 12345
+    # Random.seed!(seed_models + indexRadio + 3000)
     with_nonLinearPA = @loadKey dict "with_nonLinearPA" false 
     if with_nonLinearPA
         # pa_models = @loadKey dict "nonLinearPA_models" :Linear
@@ -148,7 +159,9 @@ end
 """ Apply power reduction to signal to emulate distance. Returns a scaling factor to multiply with the rx signal
 """
 function setup_rx_power(dict,r,snr,k)
-    
+    # Seed 
+    # seed_models     = @loadKey dict "seed_models" 12345
+    # Random.seed!(seed_models + r  + k + 5000)
     with_rx_power = @loadKey dict "with_rx_power" false
     if !with_rx_power 
         scale = 1 

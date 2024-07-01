@@ -13,6 +13,7 @@ using DigitalComm
 using Distributed 
 using FFTW 
 using Flux 
+using Infiltrator 
 using JSON
 using LinearAlgebra 
 using Logging 
@@ -24,19 +25,18 @@ using Plots
 using ProgressMeter 
 using Random 
 using Statistics 
-using Infiltrator
 include("RiFyFi_VDG/src/RiFyFi_VDG.jl")
 using .RiFyFi_VDG
 include("RiFyFi_IdF/src/RiFyFi_IdF.jl")
 using .RiFyFi_IdF
 
-include("Augmentation/src/Augmentation.jl")
-using .Augmentation
+include("Oracle_Database/src/Oracle_Database.jl")
+using .Oracle_Database
+include("WiSig_Database/src/WiSig_Database.jl")
+using .WiSig_Database
 
-include("Results/src/Results.jl")
-using .Results
-
-
+include("Experiment_Database/src/Experiment_Database.jl")
+using .Experiment_Database
 # ----------------------------------------------------
 # --- Loading utility functions
 # ---------------------------------------------------- 
@@ -54,41 +54,44 @@ export getAccuracy
 
 """ Function that drives the cnn and saves it in .bson\n
     Parameters : 
-    - Param_Data type Data_Synth  
+    - Param_Data type Data_Synth ou Data_WiSig 
     - Param_Network type of Network_struct 
 """
 function main(Param_Data,Param_Network)  
-     
     if Param_Network.Train_args.use_cuda 
         hardware= "GPU"
     else 
         hardware= "CPU"
     end
 
-    (dataTrain,dataTest,dataTrain_dyn,dataTest_dyn) = init(Param_Data,Param_Network)
-    
-
-    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
-        savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
+    (dataTrain,dataTest) = init(Param_Data,Param_Network)
+    if Param_Data.name== "WiSig"
+        savepath = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.nbSignals)/$(hardware)"
+    elseif Param_Data.name== "Oracle"
+            savepath = "run/Oracle/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.nbSignals)_$(Param_Data.distance)/$(hardware)"
+    elseif Param_Data.name== "Exp"
+        if Param_Data.permutation == true
+            savepath = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_permut/$(hardware)"
+        else 
+            savepath = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)/$(hardware)"
+        end 
+    elseif Param_Data.Augmentation_Value.augmentationType == "No_channel"
+        savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
     else 
-        savepath_model = "run/Synth/$(Param_Data.Modulation)/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
+        savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
     end 
-    !ispath(savepath_model) && mkpath(savepath_model)
+    !ispath(savepath) && mkpath(savepath)
     
-    if Param_Data.RFF == "all_impairments_dynamic_cfo"
-        (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Param_Data.Modulation,dataTrain_dyn,dataTest_dyn)
-    else   
-        (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath_model,Param_Network,Param_Data.Modulation)
-    end 
+    (model,trainLoss,trainAcc,testLoss,testAcc,args) = customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # ----------------------------------------------------
     # --- Saving model 
     # ---------------------------------------------------- 
-    modelpath = joinpath(savepath_model, "model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr)_$(Param_Data.Modulation).bson") 
+    modelpath = joinpath(savepath, "model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson") 
     nbEpochs = args.epochs
     BSON.@save modelpath model nbEpochs trainLoss trainAcc testLoss testAcc args 
     testAugmented_acc =0
     testAugmented_loss=0    
-    return (savepath_model,model,trainLoss,trainAcc,testLoss,testAcc,testAugmented_loss,testAugmented_acc) 
+    return (savepath,model,trainLoss,trainAcc,testLoss,testAcc,testAugmented_loss,testAugmented_acc) 
 end
 
 
@@ -96,7 +99,7 @@ end
 
 """ Function that load Data in Matrix format and initialize the Network
     Parameters : 
-    - Param_Data type Data_Synth 
+    - Param_Data type Data_Synth ou Data_WiSig 
     - Param_Network type of Network_struct
 """
 function init(Param_Data,Param_Network)
@@ -105,18 +108,15 @@ function init(Param_Data,Param_Network)
     # ---------------------------------------------------- 
     @info "init"
     Random.seed!(Param_Network.Seed_Network)
-    
-    (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
-    if Param_Data.RFF=="all_impairments_dynamic_cfo"
-        (X_train_dyn,Y_train_dyn,X_test_dyn,Y_test_dyn)=loadCSV_Synthetic_dynCFO(Param_Data)
-        rng = MersenneTwister(Param_Network.Seed_Network)
-        dataTrain_dyn = Flux.Data.DataLoader((X_train_dyn,Y_train_dyn), batchsize = Param_Network.Train_args.batchsize,rng=rng, shuffle = true)
-        dataTest_dyn  = Flux.Data.DataLoader((X_test_dyn, Y_test_dyn), batchsize = Param_Network.Train_args.batchsize,rng=rng, shuffle = true)
+    if Param_Data.name== "WiSig"
+        (X_train,Y_train,X_test,Y_test)=WiSig_Database.loadCSV_WiSig(Param_Data)
+    elseif Param_Data.name== "Oracle"
+        (X_train,Y_train,X_test,Y_test)=Oracle_Database.loadCSV_Oracle(Param_Data)
+    elseif Param_Data.name== "Exp"
+        (X_train,Y_train,X_test,Y_test)=Experiment_Database.loadCSV_Exp(Param_Data)
     else 
-        dataTrain_dyn = 0
-        dataTest_dyn = 0
+        (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
     end 
-
     # ----------------------------------------------------
     # --- Create datasets
     # ---------------------------------------------------- 
@@ -129,20 +129,20 @@ function init(Param_Data,Param_Network)
     @info "Init Network "
     if Param_Network.Networkname == "AlexNet"
         (nn,loss)= initAlexNet(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname=="DenseEmma"
-        (nn,loss)= DenseEmma(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+    elseif Param_Network.Networkname=="NewCNN"
+        (nn,loss)= initNewCNN(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname == "GDA"
         (nn,loss)= initGDA(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname == "Merchant"
-        (nn,loss)= initMerchant2021A(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname == "Shen"
-        (nn,loss)= initShen(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname =="ResNet"
-        (nn,loss)= initResNet(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+    elseif Param_Network.Networkname=="WiSig"
+        (nn,loss)= initWiSig(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+    elseif Param_Network.Networkname=="Roy"
+        (nn,loss)= initRoy(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+    elseif Param_Network.Networkname=="TripleDense"
+        (nn,loss)= TripleDense(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     end 
     Param_Network.loss = loss
     Param_Network.model = nn
-    return (dataTrain,dataTest,dataTrain_dyn,dataTest_dyn)
+    return (dataTrain,dataTest)
 end
 
 
