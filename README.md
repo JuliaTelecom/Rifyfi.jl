@@ -10,13 +10,24 @@
   <img src="docs/Generator.png" alt="Makie.jl" width="500">
 </div>
 
-RiFyFi is a framework for Radio Frequency Fingerprint Identification. RFF is a unique signature created in the emitter transmission chain by the hardware impairments. These impairments may be used as a secure identifier as they cannot be easily replicated for spoofing purposes. In recent years, the RFF identification relies mainly on Deep Learning (DL), and large databases are consequently needed to improve identification in different environmental conditions. RiFyFi is introduced to propose a framework combine with a virtual database to explore the RFF identification. Different transmission scenarios are modeled such as the data type (being a preamble or a payload) and the data size. 
+RiFyFi is a framework for Radio Frequency Fingerprint (RFF) Identification. RFF is a unique signature created in the emitter transmission chain by the hardware impairments. These impairments may be used as a secure identifier as they cannot be easily replicated for spoofing purposes. In recent years, the RFF identification relies mainly on Deep Learning (DL), and large databases are consequently needed to improve identification in different environmental conditions. RiFyFi is introduced to propose an identification framework which can used different type of database experimental or simulated. 
+
+In this framework we have also implemented severals parameterizable models of component impairments (the RFF), to create some virtual databases based on different transmission parameters and impairments scenarios.
+
 
 RiFyFi is composed of different subpackage 
-- RiFyFi_VDG : The Virtual Database Generator
+- RiFyFi_VDG : The Virtual Database Generator, Package to create a virtual dataset
+- Oracle_Database : Package to create a dataset with the database Oracle
+- WiSig_Database : Package to create a dataset with the database WiSig
+- Experiment_Database : Package to create a dataset with our own experimental records
 - RiFyFi_IdF : Package for training and testing network
 - Augmentation : Package used for data augmentation
 - Results : Package to create some confusion matrix or F1 score evolution in function of time.
+
+<div align="center">
+  <img src="docs/RIFYFI_SYSTEM_1.pdf" alt="Makie.jl" width="500">
+</div>
+
 
 ## Protocol to use RiFyFi with Julia 
 
@@ -31,13 +42,12 @@ RiFyFi is composed of different subpackage
 pkg> activate .
 pkg>  instantiate
 ```
-Then you can you the script script_example.jl, in the Julia Terminal :
+Then you can run the script script_RiFyFi.jl, in the Julia Terminal :
 ```
-julia> include("src/script_exemple.jl")
+julia> include("src/script_RiFyFi.jl")
 ```
 
 If you want to create your own scenario use the script example to configure the database generator.
-
 
 You can use RiFyFi in two manners: 
 -   Creating random parameter values for impairments 
