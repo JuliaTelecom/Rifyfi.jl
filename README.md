@@ -2,18 +2,24 @@
 
 [![Build Status](https://github.com/achilletIrisa/RiFyFi.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/achilletIrisa/RiFyFi.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
+
+
+
+RiFyFi is a framework for Radio Frequency Fingerprint (RFF) Identification. RFF is a unique signature created in the emitter transmission chain by the hardware impairments. These impairments may be used as a secure identifier as they cannot be easily replicated for spoofing purposes. In recent years, the RFF identification relies mainly on Deep Learning (DL), and large databases are consequently needed to improve identification in different environmental conditions. RiFyFi is introduced to propose an identification framework which can used different type of database experimental or simulated. 
+
+The objective is to use a labelled database to train a DL network and then evaluate the network classification accuracy on a different recording scenario, as presented below
+
 <div align="center">
   <img src="docs/RiFyFi1.png" alt="Makie.jl" width="380">
 </div>
 
+
+In this framework we have also implemented severals parameterizable models of component impairments (the RFF), to create some virtual databases based on different transmission parameters and impairments scenarios.
+The database generator offers a large flexibility thanks to the severals parameters the type of frame, the modulation type, the impairments and the presence of propagation channel or noise. 
+
 <div align="center">
   <img src="docs/Generator.png" alt="Makie.jl" width="500">
 </div>
-
-RiFyFi is a framework for Radio Frequency Fingerprint (RFF) Identification. RFF is a unique signature created in the emitter transmission chain by the hardware impairments. These impairments may be used as a secure identifier as they cannot be easily replicated for spoofing purposes. In recent years, the RFF identification relies mainly on Deep Learning (DL), and large databases are consequently needed to improve identification in different environmental conditions. RiFyFi is introduced to propose an identification framework which can used different type of database experimental or simulated. 
-
-In this framework we have also implemented severals parameterizable models of component impairments (the RFF), to create some virtual databases based on different transmission parameters and impairments scenarios.
-
 
 RiFyFi is composed of different subpackage 
 - RiFyFi_VDG : The Virtual Database Generator, Package to create a virtual dataset
@@ -25,7 +31,7 @@ RiFyFi is composed of different subpackage
 - Results : Package to create some confusion matrix or F1 score evolution in function of time.
 
 <div align="center">
-  <img src="docs/RIFYFI_SYSTEM.png" alt="Makie.jl" width="500">
+  <img src="docs/RIFYFI_SYSTEM.png" alt="Makie.jl" width="700">
 </div>
 
 
