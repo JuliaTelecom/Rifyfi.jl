@@ -30,7 +30,7 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
     concatVec = zeros(ComplexF32,ChunkSize*nbChunk)
     concaten!(concatVec,1:nbChunk,bigMat,ChunkSize)
     concatMat = reshape(concatVec,Int(ChunkSize*nbChunk/nbRadioTx),nbRadioTx)
-    indice = 1
+    indice = 1 
     #concatMat = bigMat #reshape(concatVec,Int(ChunkSize*nbChunk/nbRadioTx),nbRadioTx)
     @info "Create set with augmentation ..."     
 
@@ -53,13 +53,16 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
                 burstSizeTemp = nbsignauxParRadio- (iN-1)*burstSize
             end
             subSigAugmented = zeros(ComplexF32,Int(ChunkSize*burstSizeTemp))
-            subSig = @views sig[  Int((iN-1)*ChunkSize*burstSize) .+ (1:Int(ChunkSize*burstSizeTemp))]
+            subSig =  sig[  Int((iN-1)*ChunkSize*burstSize) .+ (1:Int(ChunkSize*burstSizeTemp))]
+
             for j = 1 : 1 : pourcentAugment  
+                
                 Random.seed!(seed * iR + j )    
                 #--- Data augmentation 
                 # First get unique impairment model
                 σ   = choose(snrRange)
                 f   = choose(cfoRange) / 5e6 # Normalized CFO, wrt sampling rate 
+                channel="multipath"
                 if channel == "multipath"
                     cir = getChannel(τₘ;model=:multipath,nbTaps)
                 elseif channel == "etu"
@@ -68,8 +71,7 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
                     cir = getChannel(τₘ;model=:eva,nbTaps)
                 end
                 # Augment the data
-                signalAugmentation!(subSigAugmented,channel,"OfflineV1",subSig,cir,f,σ)
-
+                subSigAugmented=signalAugmentation(subSigAugmented,channel,"OfflineV1",subSig,cir,f,σ)
                 sig_real= IQsample_real(subSigAugmented)
                 sig_imag = IQsample_ima(subSigAugmented)
                 # --- Populate segment 
@@ -87,6 +89,7 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
     end
     X = Augmented_MatTemp
     Y = Augmented_Labels
+    
 # --- Ajout de la Normalisation si besoin
 return (X,Y)
 end
@@ -96,14 +99,14 @@ function AugmentationParameters()
     # --- Range of parameters 
     # ---------------------------------------------------- 
     # Define the range of the additive white noise in dB
-    snrRange = (0:30)
+    snrRange = (20:30)
     # Define the range of the added CFO in Hz 
     cfoRange = (-1e3:1e1)
     # Define the max delay spread of the CIR 
     # CP value in OFDM here
     τₘ = 36 
     # We canont define a pure random multipath channel so we define here the number of taps we will have. the position of the bins will be set randomly between 1 and τₘ
-    nbTaps = 8 
+    nbTaps =  8 
     return    snrRange,cfoRange,τₘ,nbTaps
 
 end
@@ -177,12 +180,18 @@ function getChannel(τ::Number;model=:none,nbTaps=1)
         # Pure random sequence, without profile
         cir = randn(ComplexF32,τ)
     elseif model== :multipath 
+        nbTaps=1
         # Select the tap of interest 
         # We will have energy at this locations only
         id   = choose(collect(1:τ),nbTaps)
         # Populate the CIR
         cir = zeros(ComplexF32,τ)
-        cir[id] .= randn(ComplexF32,nbTaps)
+        Maxval=0.5 # bruit entre 1 -0.5 et 1+0.5
+        sigma = Maxval/3 #ecart type du bruit 3sigma
+        
+        cir[id] .= (1 .-randn(Float32,nbTaps).*sigma) .* exp.(2im*π*rand(Float32,nbTaps)) # Max valeur 0.5
+   
+
     elseif model == :etu 
         channelModel = initChannel("constetu",2.4e9,5e6,0)
       #  Random.seed!()
@@ -196,7 +205,7 @@ function getChannel(τ::Number;model=:none,nbTaps=1)
     end
     return cir
 end
-#
+
 
 
 
@@ -220,29 +229,40 @@ end
 
 
 
-
 """" 
 Augment the input signal, based on CIR impulse response, CFO value and noise variance
-""" 
+
 function signalAugmentation(sig::AbstractVector,chanel,augmentationType,h::AbstractVector,cfo::Number,σ::Number)
     sigOut = similar(sig)
     signalAugmentation!(sigOut,chanel,augmentationType,sig,h,cfo,σ)
     return sigOut
 end
-function signalAugmentation!(sigOut,chanel,augmentationType,sig::AbstractVector,h::AbstractVector,cfo::Number,σ::Number)
+"""
+function signalAugmentation(sigOut,chanel,augmentationType,sig::AbstractVector,h,cfo::Number,σ::Number)
     # --- Tx CFO 
-    addCFO!(sigOut,ComplexF32.(sig),cfo,1,0)
+ ##   addCFO!(subSigAugmented,ComplexF32.(sig),cfo,1,0)
+    addCFO!(sigOut,sig,cfo,1,0)
     # --- Apply Channel model
     # Convolution and tail truncation model 
+    #Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
+
+
     δ = length(h)÷2
-    if augmentationType =="OnlineV2" && chanel=="multipath" || chanel=="eva"
+
+    if mod(length(h),2)==1
         sigChan = DSP.conv(sigOut,h)[1+δ:end-δ]
     else
         sigChan = DSP.conv(sigOut,h)[1+δ:end-δ+1]
     end 
-    # --- AWGN 
     
-    addNoise!(ComplexF32.(sigOut),ComplexF32.(sigChan),σ)
+
+    # --- AWGN 
+    sigOut,_ = addNoise(ComplexF32.(sigChan),σ)
+
+ 
+ #  addNoise!(sigOut,ComplexF32.(sigChan),σ)
+   # sigOut=sigChan
+##   y= addNoise!(ComplexF32.(subSigAugmented),ComplexF32.(sigChan),σ)
     return sigOut
 end
 

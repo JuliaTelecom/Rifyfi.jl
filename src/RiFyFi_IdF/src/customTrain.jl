@@ -7,10 +7,10 @@ function eval_loss_accuracy(loader, model, loss, device)
     acc = 0
     ntot = 0
     for (x, y) in loader
-     #   x = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
+    #    x = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
 
         x, y = x |> device, y |> device
-      #  ŷ = model(reshape(x, (256,2,1,(size(x))[3])))    
+    #    ŷ = model(reshape(x, (256,2,1,(size(x))[3])))    
         ŷ = model(x)
         l += loss(ŷ, y) * size(x)[end]        
         acc += sum(onecold(ŷ |> cpu) .== onecold(y |> cpu))

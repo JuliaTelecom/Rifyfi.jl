@@ -19,6 +19,8 @@ using DataFrames
 using Infiltrator
 include("../../Augmentation/src/Augmentation.jl")
 using .Augmentation
+
+
 # ----------------------------------------------------
 # --- Export 
 # ---------------------------------------------------- 
@@ -97,26 +99,20 @@ end
 
 
 
-
-
 """ 
-Create train and test dataset (here matrixes and not dataloader) for a given distance in feet. If the keyword "all" is used the train and test sets uses all distances.
-(X_train,Y_train,X_test,Y_test) = create_X_and_Y(distance)
+Create virtual train and test dataset (here matrixes and not dataloader) 
+return the differents datasets. 
+- creation of sequences, add impairments (fixed or random), add channels, shuffle, normalize.
 """
 function create_virtual_Database(Param_Data)
-    shuffle =true
+    shuffle = false
     @info "Create Tx"
     # --- Def parameters
-    augmentationType = Param_Data.Augmentation_Value.augmentationType
-    ChunkSize = Param_Data.Chunksize
-    nbRadioTx = Param_Data.nbTx
     E = Param_Data.E
     S = Param_Data.S
     C = Param_Data.C 
     RFF = Param_Data.RFF
     name = Param_Data.name
-    nbSignaux = Param_Data.nbSignals
-    pourcentTrain = Param_Data.pourcentTrain
     seed_data = Param_Data.seed_data
     seed_dataTest = Param_Data.seed_dataTest
     seed_model = Param_Data.seed_model
@@ -126,16 +122,16 @@ function create_virtual_Database(Param_Data)
     # ----------------------------------------------------------------
     if Param_Data.configuration == "nothing"
         @info "Create Tx with random impairments"
-        savePath="Configurations/$(augmentationType)_$(nbRadioTx)_$(ChunkSize)/$(E)_$(RFF)_$(name)"
+        savePath="Configurations/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(E)_$(RFF)_$(name)"
         !ispath(savePath) && mkpath(savePath)
         # --- Create configuration based on mean value and interval parameter
         configurationTrain = "$(savePath)/ConfigTrain.json"
         configurationTest = "$(savePath)/ConfigTest_$(S).json"
-        createConfiguration(configurationTrain,ChunkSize,nbRadioTx,nbSignaux,C,seed_model,seed_data)
-        createConfiguration(configurationTest,ChunkSize,nbRadioTx,nbSignaux,C,seed_modelTest,seed_dataTest)
+        createConfiguration(configurationTrain,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,C,seed_model,seed_data)
+        createConfiguration(configurationTest,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,C,seed_modelTest,seed_dataTest)
         # --- Generate Database random database correspond to the parameters and configuration
-        tupTrain = generateDatabase(configurationTrain,E,S,C,RFF,name,Int(nbSignaux*pourcentTrain))
-        tupTest = generateDatabase(configurationTest,E,S,C,RFF,name,nbSignaux-Int(nbSignaux*pourcentTrain))
+        tupTrain = generateDatabase(configurationTrain,E,S,C,RFF,name,Int(Param_Data.nbSignals*Param_Data.pourcentTrain))
+        tupTest = generateDatabase(configurationTest,E,S,C,RFF,name,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain))
         # Saving configuration of the Database with value of impairments
         saveScenario("$(savePath)/scenario.json",tupTrain.dict_out)
     # ---------------------------------------------------------------------------
@@ -144,70 +140,64 @@ function create_virtual_Database(Param_Data)
     elseif Param_Data.configuration == "scenario" 
         # --- Generate Database with fixe impairments scenario
         @info "Create Tx based on scenario $(E) $(RFF) $(name)" 
-        savePath="Configurations/$(augmentationType)_$(nbRadioTx)_$(ChunkSize)/$(E)_$(RFF)_$(name)"
+        savePath="Configurations/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(E)_$(RFF)_$(name)"
         !ispath(savePath) && mkpath(savePath)
         # --- Create configuration based on parameter
         configurationTrain = "$(savePath)/ConfigTrain.json"
         configurationTest = "$(savePath)/ConfigTest_$(S).json"
-        createConfiguration(configurationTrain,ChunkSize,nbRadioTx,nbSignaux,C,seed_model,seed_data)
-        createConfiguration(configurationTest,ChunkSize,nbRadioTx,nbSignaux,C,seed_modelTest,seed_dataTest)
+        createConfiguration(configurationTrain,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,C,seed_model,seed_data)
+        createConfiguration(configurationTest,Param_Data.Chunksize,Param_Data.nbTx,Param_Data.nbSignals,C,seed_modelTest,seed_dataTest)
         # --- Create database based on scenarios impairments previously defined 
         s_d_mismatch,s_d_cfo,s_d_phaseNoise,s_d_nonLinearPA =  reloadScenario("$(savePath)/scenario.json",RFF)
-        tupTrain = generateDatabase(configurationTrain,E,S,C,RFF,name,Int(nbSignaux*pourcentTrain);s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
-        tupTest = generateDatabase(configurationTest,E,S,C,RFF,name,nbSignaux-Int(nbSignaux*pourcentTrain);s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+        tupTrain = generateDatabase(configurationTrain,E,S,C,RFF,name,Int(Param_Data.nbSignals*Param_Data.pourcentTrain);s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
+        tupTest = generateDatabase(configurationTest,E,S,C,RFF,name,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain);s_d_mismatch, s_d_cfo, s_d_phaseNoise, s_d_nonLinearPA)
     end 
     # --- Compute dimension of Matrices 
-    nbChunks = nbSignaux *nbRadioTx # size(tupTrain.bigMat,3) + size(tupTest.bigMat,3)
-    nbTrain = Int(round(pourcentTrain*nbChunks)) # size(tupTrain.bigMat,3)
+    nbChunks = Param_Data.nbSignals *Param_Data.nbTx # size(tupTrain.bigMat,3) + size(tupTest.bigMat,3)
+    nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks)) # size(tupTrain.bigMat,3)
     nbTest = nbChunks - nbTrain # size(tupTest.bigMat,3)
-    nbTrain_per_radio =Int(nbTrain/nbRadioTx) 
-    nbTest_per_radio =Int(nbTest/nbRadioTx)
+    nbTrain_per_radio =Int(nbTrain/Param_Data.nbTx) 
+    nbTest_per_radio =Int(nbTest/Param_Data.nbTx)
     X_trainTemp = tupTrain.bigMat
     X_testTemp = tupTest.bigMat
 
     # --- Pour chaque radio TX on complète les matrices de labels  
-    if name =="1VsAll"
-        Y_trainTemp = zeros(2,nbTrain)
-        Y_testTemp = zeros(2,nbTest)
-        for iR =1 :1:2
-            Y_trainTemp[iR,(nbRadioTx-1)*((iR-1)*nbTrain_per_radio)+1:(nbRadioTx-2+iR)*nbTrain_per_radio] .= 1
-            Y_testTemp[iR,(nbRadioTx-1)*((iR-1)*nbTest_per_radio)+1:(nbRadioTx-2+iR)*nbTest_per_radio] .= 1
-        end
-    else 
-        Y_trainTemp = zeros(nbRadioTx,nbTrain)
-        Y_testTemp = zeros(nbRadioTx,nbTest)
-        for iR =1 :1:nbRadioTx
-            Y_trainTemp[iR,(iR-1)*nbTrain_per_radio+1:iR*nbTrain_per_radio] .= 1
-            Y_testTemp[iR,(iR-1)*nbTest_per_radio+1:iR*nbTest_per_radio] .= 1
-        end
-    end 
+    Y_trainTemp = zeros(Param_Data.nbTx,nbTrain)
+    Y_testTemp = zeros(Param_Data.nbTx,nbTest)
+    for iR =1 :1:Param_Data.nbTx
+        Y_trainTemp[iR,(iR-1)*nbTrain_per_radio+1:iR*nbTrain_per_radio] .= 1
+        Y_testTemp[iR,(iR-1)*nbTest_per_radio+1:iR*nbTest_per_radio] .= 1
+    end
+
     # --------------------------------------------------
     # --- Add Channel / Augmented Data 
     # --------------------------------------------------
-    if augmentationType=="augment" || augmentationType=="same_channel" || augmentationType=="1channelTest"
+    if Param_Data.Augmentation_Value.augmentationType=="augment" || 
+        Param_Data.Augmentation_Value.augmentationType=="same_channel" ||
+         Param_Data.Augmentation_Value.augmentationType=="1channelTest"
+        
         nbAugment = Param_Data.Augmentation_Value.nb_Augment
-        @info nbAugment
+        @info "augmentation x $nbAugment"
         channel =Param_Data.Augmentation_Value.Channel
         channel_Test =Param_Data.Augmentation_Value.Channel_Test
         seed_channel = Param_Data.Augmentation_Value.seed_channel
         seed_channel_test = Param_Data.Augmentation_Value.seed_channel_test
         burstSize = Param_Data.Augmentation_Value.burstSize
-        if augmentationType=="augment" 
-            N = Int(nbSignaux * pourcentTrain) # on génère toujours nbSignaux par canal 
-            ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,channel,ChunkSize,nbAugment,nbRadioTx,seed_channel,burstSize)
-            @info size(X_train)
+        if Param_Data.Augmentation_Value.augmentationType=="augment" 
+            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # on génère toujours nbSignaux par canal 
+            ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,channel,Param_Data.Chunksize,nbAugment,Param_Data.nbTx,seed_channel,burstSize)
             # TEST
-            N = nbSignaux - N 
+            N = Param_Data.nbSignals - N 
             nbAugment_Test = 100
-            (X_test,Y_test)=Augmentation.Add_diff_Channel_train_test(X_testTemp,Y_testTemp,N,channel_Test,ChunkSize,nbAugment_Test,nbRadioTx,seed_channel_test,burstSize)
-        elseif augmentationType=="same_channel"
-            N = Int(nbSignaux * pourcentTrain) # on génère toujours nbSignaux par canal 
-            ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,channel,ChunkSize,nbAugment,nbRadioTx,seed_channel,burstSize)
+            (X_test,Y_test)=Augmentation.Add_diff_Channel_train_test(X_testTemp,Y_testTemp,N,channel_Test,Param_Data.Chunksize,nbAugment_Test,Param_Data.nbTx,seed_channel_test,burstSize)
+        elseif Param_Data.Augmentation_Value.augmentationType=="same_channel"
+            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # on génère toujours nbSignaux par canal 
+            ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,channel,Param_Data.Chunksize,nbAugment,Param_Data.nbTx,seed_channel,burstSize)
             # TEST
-            N = nbSignaux - N 
+            N = Param_Data.nbSignals - N 
             nbAugment_Test = nbAugment
             seed_channel_test = seed_channel
-            (X_test,Y_test)=Augmentation.Add_diff_Channel_train_test(X_testTemp,Y_testTemp,N,channel,ChunkSize,nbAugment_Test,nbRadioTx,seed_channel_test,burstSize)
+            (X_test,Y_test)=Augmentation.Add_diff_Channel_train_test(X_testTemp,Y_testTemp,N,channel,Param_Data.Chunksize,nbAugment_Test,Param_Data.nbTx,seed_channel_test,burstSize)
         end 
         else
         nbAugment = 1
@@ -217,14 +207,15 @@ function create_virtual_Database(Param_Data)
         Y_test=Y_testTemp
         nbAugment_Test =1
     end
+
     # ----------------------------------------
     # --- Shuffle signals with labels 
     # ----------------------------------------
     if shuffle
-        X_trainS = zeros(Float32,ChunkSize,2,nbTrain*nbAugment)
-        Y_trainS = zeros(Float32,nbRadioTx,nbTrain*nbAugment)
-        X_testS = zeros(Float32,ChunkSize,2,nbTest*nbAugment_Test)
-        Y_testS = zeros(Float32,nbRadioTx,nbTest*nbAugment_Test)
+        X_trainS = zeros(Float32,Param_Data.Chunksize,2,nbTrain*nbAugment)
+        Y_trainS = zeros(Float32,Param_Data.nbTx,nbTrain*nbAugment)
+        X_testS = zeros(Float32,Param_Data.Chunksize,2,nbTest*nbAugment_Test)
+        Y_testS = zeros(Float32,Param_Data.nbTx,nbTest*nbAugment_Test)
         indexes = randperm(Int(size(X_train,3)))
         for i =1 :1 :size(X_train,3)
             X_trainS[:,:,(i)] = X_train[:,:,(indexes[i])] 
@@ -241,16 +232,53 @@ function create_virtual_Database(Param_Data)
         Y_test=Y_testS
     end 
     # ----------------------------------------
-    # --- Normalized data
+    # --- Normalized data 
     # ----------------------------------------
     if Param_Data.Normalisation
+        # Two types of normalisation: Normalize all the dataset // Normalize each group of sequence
+
+        #= 
+        ## Nomalize all dataset ##
         (moy,std_val) = (0,0)
         (moy,std_val) = preProcessing!(X_train,nothing,nothing)
-        (moy,std_val) = preProcessing!(X_test,moy,std_val)
+       (moy,std_val) = preProcessing!(X_test,moy,std_val)
+        =#
+     
+        ##  Normalize each group of sequence ##
+        burstSize = Param_Data.Augmentation_Value.burstSize
+        nbBurstParRadio = Int(floor(size(X_train,3)/(burstSize*Param_Data.nbTx)) )
+        nbTrain_per_radio = Int(size(X_train,3)/Param_Data.nbTx)
+        for iR = 1 :1: Param_Data.nbTx
+            for i = 1 : 1 : nbBurstParRadio 
+                if i == nbBurstParRadio
+                    burstSizeTemp = burstSize + (nbTrain_per_radio)-nbBurstParRadio*64
+                else 
+                    burstSizeTemp =burstSize
+                end 
+                Temp=X_train[:,:,((iR-1)*nbTrain_per_radio+(i-1)*burstSize +1): ((iR-1)*nbTrain_per_radio+(i-1)*burstSize+burstSizeTemp)]
+                Temp = normalisation_sig(Temp)
+                X_train[:,:,((iR-1)*nbTrain_per_radio+(i-1)*burstSize +1): ((iR-1)*nbTrain_per_radio+(i-1)*burstSize+burstSizeTemp)]=Temp
+            end 
+        end 
+        nbBurstParRadio = Int(floor(size(X_test,3)/(burstSize*Param_Data.nbTx)) )
+        nbTest_per_radio =Int(size(X_test,3)/Param_Data.nbTx)
+        for iR = 1 :1: Param_Data.nbTx
+            for i = 1 : 1 : nbBurstParRadio 
+                if i == nbBurstParRadio 
+                    burstSizeTemp =  burstSize + (nbTest_per_radio)-nbBurstParRadio*64
+                else 
+                    burstSizeTemp =burstSize
+                end 
+                Temp= X_test[:,:,((iR-1)*nbTest_per_radio+(i-1)*burstSize +1): ((iR-1)*nbTest_per_radio+(i-1)*burstSize+burstSizeTemp)]
+                Temp= normalisation_sig(Temp)
+                X_test[:,:,((iR-1)*nbTest_per_radio+(i-1)*burstSize +1): ((iR-1)*nbTest_per_radio+(i-1)*burstSize+burstSizeTemp)]=Temp
+            end 
+        end 
     end 
+
     if Param_Data.features == "Module_angle"
-        X_train_Mod = zeros(Float32,ChunkSize,2,nbTrain*nbAugment)
-        X_test_Mod = zeros(Float32,ChunkSize,2,nbTest*nbAugment_Test)
+        X_train_Mod = zeros(Float32,Param_Data.Chunksize,2,nbTrain*nbAugment)
+        X_test_Mod = zeros(Float32,Param_Data.Chunksize,2,nbTest*nbAugment_Test)
         X_train_Mod[:,1,:] .= abs2.(X_train[:,1,:]+ im *X_train[:,2,:])
         X_train_Mod[:,2,:] .= angle.(X_train[:,1,:]+ im *X_train[:,2,:])
         X_train = X_train_Mod
@@ -260,36 +288,36 @@ function create_virtual_Database(Param_Data)
     return (X_train,Y_train,X_test,Y_test,tupTrain.X)
 end
 
+
 """ Function that load data from the CSV file for Synthetic database
 """
 function loadCSV_Synthetic(Param_Data)
     augmentationType = Param_Data.Augmentation_Value.augmentationType
     ChunkSize = Param_Data.Chunksize
-    nbRadioTx = Param_Data.nbTx
+    Param_Data.nbTx = Param_Data.nbTx
     E = Param_Data.E
     S = Param_Data.S
     C = Param_Data.C 
     RFF = Param_Data.RFF
     name = Param_Data.name
-    nbSignaux = Param_Data.nbSignals
     pourcentTrain = Param_Data.pourcentTrain
 
-    nbChunks=Int(nbRadioTx*nbSignaux)
-    nbTrain = Int(round(pourcentTrain*nbChunks))
+    nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals)
+    nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
-    if augmentationType == "No_channel"
-        savepath = "./CSV_Files/$(augmentationType)_$(nbRadioTx)_$(ChunkSize)/$(E)_$(S)/$(E)_$(S)_$(C)_$(RFF)_$(nbSignaux)_$(name)"    
+    if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+        savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(E)_$(S)/$(E)_$(S)_$(C)_$(RFF)_$(Param_Data.nbSignals)_$(name)"    
     else  
         channel = Param_Data.Augmentation_Value.Channel
         channel_Test = Param_Data.Augmentation_Value.Channel_Test
         nbAugment = Param_Data.Augmentation_Value.nb_Augment
         savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
         nbTrain = nbTrain * nbAugment
-        if augmentationType == "1channelTest"  
+        if Param_Data.Augmentation_Value.augmentationType == "1channelTest"  
             nbTest = nbTest * 1
-        elseif augmentationType == "same_channel"  
+        elseif Param_Data.Augmentation_Value.augmentationType == "same_channel"  
             nbTest = nbTest * 1
-        else augmentationType == "augment"
+        else Param_Data.Augmentation_Value.augmentationType == "augment"
             nbTest = nbTest * 100
         end 
     end 
@@ -303,18 +331,18 @@ function loadCSV_Synthetic(Param_Data)
     X_testTemp = Matrix(DataFrame(CSV.File(fileDataTest;types=Float32,header=false)))
     fileDataTrain= "$(savepath)/bigMatTrain.csv"
     X_trainTemp = Matrix(DataFrame(CSV.File(fileDataTrain;types=Float32,header=false)))
-    X_train = zeros(Float32, ChunkSize,2,nbTrain)
-    X_test = zeros(Float32, ChunkSize,2,nbTest)
-    Y_train = zeros(nbRadioTx,nbTrain)
-    Y_test = zeros(nbRadioTx,nbTest)
+    X_train = zeros(Float32, Param_Data.Chunksize,2,nbTrain)
+    X_test = zeros(Float32, Param_Data.Chunksize,2,nbTest)
+    Y_train = zeros(Param_Data.nbTx,nbTrain)
+    Y_test = zeros(Param_Data.nbTx,nbTest)
 
     for i in 1:size(X_trainTemp)[1]  
-        X_train[:,1,i]=X_trainTemp[i,1:ChunkSize]
-        X_train[:,2,i]=X_trainTemp[i,ChunkSize+1:ChunkSize+ChunkSize]
+        X_train[:,1,i]=X_trainTemp[i,1:Param_Data.Chunksize]
+        X_train[:,2,i]=X_trainTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
     for i in 1:size(X_testTemp)[1]  
-        X_test[:,1,i]=X_testTemp[i,1:ChunkSize]
-        X_test[:,2,i]=X_testTemp[i,ChunkSize+1:ChunkSize+ChunkSize]
+        X_test[:,1,i]=X_testTemp[i,1:Param_Data.Chunksize]
+        X_test[:,2,i]=X_testTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
     for i in 1:size(Y_trainTemp)[1]  
         Y_train[Y_trainTemp[i]+1,i]=1
@@ -326,14 +354,13 @@ function loadCSV_Synthetic(Param_Data)
 end 
 
 
-
-
 """ Generates a datbase based on the configuration stored in the JSON file `filename`
 """
 function generateDatabase(filename::String,E::String,S::String,C::String,RFF::String,name::String,nbSignaux::Int;kw...)
     dict = loadConfiguration(filename)
     return generateDatabase(dict,E,S,C,RFF,name,nbSignaux;kw...)
 end
+
 
 """ Create a default constructor if no input structure is given. Otherwise, returns the structure
 """
@@ -354,6 +381,7 @@ function generateDatabase(dict::AbstractDict{Symbol,Any},E,S,C,RFF,name,nbSignau
     ds = string_dict(dict)
     generateDatabase(ds,E,S,C,RFF,name,nbSignaux;kw...)
 end
+
 
 """ Generate a vector of RF impairments structure, based on the filename. The output can be used as input of generateDatabase. The file used as input should habe been generated from saveScenario, whose output is from generateDatabase
 """
@@ -398,7 +426,6 @@ function reloadScenario(filename,RFF)
 end
 
 
-
 """ Core signal generation, using a Dict for configuration. Each impairment config can be overwritted by custom config
 """
 function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignaux;
@@ -441,7 +468,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
 
 
     # --- Iterative generation 
-#=
+    #=
     X_brut = zeros(Float32,4,263040,2)
     savepath = "CSV_Files/sans_4_256/E1_S2/E1_S2_C1_all_impairments_1000_"
     brut1= "$(savepath)/X_brut1.csv"
@@ -453,7 +480,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
     brut4= "$(savepath)/X_brut4.csv"
     X_brut[4,:,:] = Matrix(DataFrame(CSV.File(brut4;types=Float64,header=false)))
     nbIQ= 16440
-=#
+    =#
     for r ∈ 1 : nb_radios
         #=
         if r==1 
@@ -505,7 +532,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
             end
         else
             if E=="E1"
-            s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,1)
+                s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,1)
             else 
                 s_nonLinearPA    = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,r)
             end 
@@ -616,6 +643,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
                 out,_ = addNoise(x,s_noise)
             else # C=="C2" || C=="C2_10dB" || C=="C2_20dB" || C=="C2_0dB"
                 Random.seed!(seed_models + (r-1)* nb_bursts + r + k )
+        
                 out,_ = addNoise(x,s_noise)
             end 
 
@@ -660,6 +688,8 @@ function fill_data!(bigMat,out,chunk_size,small_chunk,cnt)
     end
     return cnt + small_chunk
 end
+
+
 function fill_label!(bigLabels,small_chunk,r,cnt)
     for n ∈ 1 : small_chunk
         bigLabels[r,cnt + n] = 1 
@@ -683,6 +713,7 @@ function myRand(digitPower,numDigits)
         return sign * val
     end
 end
+
 
 """ Create a configuration and stores in filename. Code should be copy and paste for full customisation
 """
@@ -771,6 +802,7 @@ function saveScenario(filename,dict_out)
     end
 end
 
+
 """ Apply a convolutional channel describe in vector s_channel to x. Mutate x with the modified data
 """
 function applyChannel!(x::AbstractVector{Complex{T}},s_channel::Union{AbstractVector{T},AbstractVector{Complex{T}}})  where {T<:Real}
@@ -790,6 +822,7 @@ function applyChannel!(x::AbstractVector{Complex{T}},s_channel::Union{AbstractVe
         x .= sigChan
     end
 end
+
 
 """ Load the configuration stored in the JSON file `filename`
 """

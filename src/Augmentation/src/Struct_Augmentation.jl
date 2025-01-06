@@ -4,7 +4,7 @@ Base.@kwdef mutable struct Data_Augmented
     Channel_Test::String = "etu"
     nb_Augment::Int = 1
     seed_channel::Int = 12
-    seed_channel_test::Int = 999999999 * 100000000
+    seed_channel_test::Int = 12#999999999 * 100000000
     burstSize::Int =64
 end
 

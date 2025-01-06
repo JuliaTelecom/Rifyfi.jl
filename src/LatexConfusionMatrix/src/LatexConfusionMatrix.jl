@@ -7,6 +7,7 @@ using DataFrames, CSV       # Manage confusion matrix files
 using PrettyTables          # Rendering latex 
 using Colors, ColorSchemes  # Gradient colors
 using InteractiveUtils: clipboard
+using Infiltrator
 # --- Methods extension 
 import Base:getindex
 
@@ -16,7 +17,7 @@ import Base:getindex
 export latexConfusionMatrix
 export good_grad_formatter
 export bad_grad_formatter
-
+export red_grad_formatter
 # ----------------------------------------------------
 # --- Standalone Latex mode,
 # ---------------------------------------------------- 
@@ -105,6 +106,13 @@ function bad_grad_formatter(m,i,j,v)
     obj         = customGrad(grad,0.0,25.0) 
     return formatter(obj,m,i,j,v)
 end
+
+function red_grad_formatter(m,i,j,v)
+    grad        = colormap("Reds",30)[1:20] # Only beginning to avoid dark colors
+    obj         = customGrad(grad,0.0,50.0) 
+    return formatter(obj,m,i,j,v)
+end
+
 
 """ Load the confusion matrix stored in `file` and create a Latex table 
 Optional arguments

@@ -22,7 +22,6 @@ using .LatexConfusionMatrix
 
 include("Prod_ConfusionMatrix.jl")
 
-
 include("../../Augmentation/src/Augmentation.jl")
 using .Augmentation
 
@@ -49,33 +48,25 @@ function main(Param_Data,Param_Network,Type_Resuts,savepathbson,Param_Data_test,
         elseif Type_Resuts == "Compute_mean"
             Compute_mean_WiSig(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
         elseif Type_Resuts == "Confusion_Matrix"
-         acc =   Confusion_Matrix_CSV_WiSig(Param_Data,Param_Network,Param_Data_test,savepathbson )
+            acc = Confusion_Matrix_CSV_WiSig(Param_Data,Param_Network,Param_Data_test,savepathbson )
         end 
     # Oracle 
     elseif Param_Data.name == "Oracle"
-        if Type_Resuts == "F1_score"
-            F1_score_WiSig(Param_Data,Param_Network,Table_Seed_Network,savepathbson)
-        elseif Type_Resuts == "Compute_mean"
-            Compute_mean_WiSig(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
-        elseif Type_Resuts == "Confusion_Matrix"
+        if Type_Resuts == "Confusion_Matrix"
             Confusion_Matrix_CSV_Oracle(Param_Data,Param_Network,Param_Data_test,savepathbson )
         end 
     # Experiment
     elseif Param_Data.name == "Exp"
-        if Type_Resuts == "F1_score"
-            F1_score_WiSig(Param_Data,Param_Network,Table_Seed_Network,savepathbson)
-        elseif Type_Resuts == "Compute_mean"
-            Compute_mean_WiSig(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
-        elseif Type_Resuts == "Confusion_Matrix"
-            Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savepathbson )
+        if Type_Resuts == "Confusion_Matrix"
+            acc= Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savepathbson )
+        elseif Type_Resuts == "time"
+            Time_Exp(Param_Data,Param_Network,Param_Data_test,savepathbson )
         end 
     else 
         if Type_Resuts == "F1_score"
             F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson)
         elseif Type_Resuts == "Compute_mean"
-            
             Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
-        
         elseif Type_Resuts == "Confusion_Matrix"
             Confusion_Matrix_CSV(Param_Data,Param_Network,Param_Data_test,savepathbson )
         
@@ -88,6 +79,7 @@ end
 
 
 function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson="")
+    
     if Param_Network.Train_args.use_cuda ==true 
         hardware1 = "GPU"
     else 

@@ -63,21 +63,21 @@ function main(Param_Data,Param_Network)
     else 
         hardware= "CPU"
     end
-
+    # Load the datasets and init network
     (dataTrain,dataTest) = init(Param_Data,Param_Network)
     if Param_Data.name== "WiSig"
-        savepath = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.nbSignals)/$(hardware)"
-    elseif Param_Data.name== "Oracle"
-            savepath = "run/Oracle/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.nbSignals)_$(Param_Data.distance)/$(hardware)"
-    elseif Param_Data.name== "Exp"
-        if Param_Data.permutation == true
-            savepath = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_permut/$(hardware)"
-        else 
-            savepath = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)/$(hardware)"
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+            savepath = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.nbSignals)/$(hardware)"
+        else
+            savepath = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.nbSignals)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
         end 
-    elseif Param_Data.Augmentation_Value.augmentationType == "No_channel"
+    elseif Param_Data.name== "Oracle"
+        savepath = "run/Oracle/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.nbSignals)_$(Param_Data.distance)/$(hardware)"
+    elseif Param_Data.name== "Exp"
+        savepath = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_$(Param_Data.noise)/$(hardware)"
+    elseif Param_Data.Augmentation_Value.augmentationType == "No_channel" # Synthetic data 
         savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)/$(hardware)"
-    else 
+    else # Synthetic data  with data augmentation
         savepath = "run/Synth/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware)"
     end 
     !ispath(savepath) && mkpath(savepath)
@@ -114,7 +114,7 @@ function init(Param_Data,Param_Network)
         (X_train,Y_train,X_test,Y_test)=Oracle_Database.loadCSV_Oracle(Param_Data)
     elseif Param_Data.name== "Exp"
         (X_train,Y_train,X_test,Y_test)=Experiment_Database.loadCSV_Exp(Param_Data)
-    else 
+    else # Synthetic data 
         (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
     end 
     # ----------------------------------------------------
@@ -135,10 +135,6 @@ function init(Param_Data,Param_Network)
         (nn,loss)= initGDA(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname=="WiSig"
         (nn,loss)= initWiSig(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname=="Roy"
-        (nn,loss)= initRoy(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
-    elseif Param_Network.Networkname=="TripleDense"
-        (nn,loss)= TripleDense(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     end 
     Param_Network.loss = loss
     Param_Network.model = nn

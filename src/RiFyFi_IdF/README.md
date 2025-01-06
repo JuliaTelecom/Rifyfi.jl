@@ -4,6 +4,9 @@
 
 
 The Module RiFyFi_IdF defines function related to the classification/ Identification Framework particularly based on CNN
+Four different CNN are impleted here but you can implement your own NN.
+
+The file Struct_Network.jl defines a structure to save information concerning the network: name, leraning parameters, numbers of epoch ... Feel free to add any parameter you want to change.
 
 
 function initAlexNet(x)

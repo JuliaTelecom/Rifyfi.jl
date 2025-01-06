@@ -23,7 +23,73 @@ function confusionMatrix(l̂::AbstractArray,l::AbstractArray,nbRadios::Number)
     return confMatrix 
 end
 
+function Time_Exp(Param_Data,Param_Network,Param_Data_test,savepathbson)
+@infiltrate
+    hardware1 = "GPU"
 
+    if savepathbson == ""
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+            if Param_Data.permutation == true
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_permut/$(hardware1)"
+            elseif Param_Data.noise==nothing 
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)/$(hardware1)"
+            else 
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_$(Param_Data.noise)/$(hardware1)"
+
+            end        
+        end 
+    end 
+
+    allAcc = Float64[]
+        
+    res =RiFyFi_IdF.loadCNN("$(savepathbson)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson")
+
+    model = res.model
+    testmode!(model, true)  # We are in test mode, with no dropout 
+    (moy,std_val) = (nothing,nothing)
+    allAccuracy = Float64[]
+   
+    (_,_,X_test,Y_test) = Experiment_Database.loadCSV_Exp(Param_Data_test) 
+    device= gpu
+
+    dataTest = Flux.Data.DataLoader((X_test, Y_test), batchsize = Param_Network.Train_args.batchsize, shuffle = false )
+    l̂,l = inference(model,dataTest,device)
+    acc = getAccuracy(l̂,l) 
+    @info "acc" acc
+
+    score1 = l̂[1:500] .==1 
+    score2 = l̂[2001:2500] .==5
+
+    @infiltrate
+    dictMarker  = ["square","triangle*","diamond*","*","pentagon*","rect","otimes","triangle*"];
+    # --- Dictionnary for colors 
+    dictColor   = ColorSchemes.tableau_superfishel_stone
+    @pgf a = Axis({
+                height      ="3in",             # Size of Latex object, adapted to IEEE papers 
+                width       ="4in",
+                grid,
+                xlabel      = "Time [s]",       # X axis name 
+                ylabel      = "F1 score",       # Y axis name  
+                legend_style="{at={(1,0)},anchor=south east,legend cell align=left,align=left,draw=white!15!black}"         # Legend, 2 first parameters are important: we anchor the legend in bottom right (south east) and locate it in bottom right of the figure (1,0)
+                },
+    );
+
+
+
+    @pgf push!(a,Plot({color=dictColor[1],mark=dictMarker[1]},Table([1:500,score2[:]])))
+    @pgf push!(a, LegendEntry("Seed $(i)")) # Train)
+  
+
+    #confMatrix = confusionMatrix(l̂,l,Param_Data.nbTx)
+    #plt = plotConfusionMatrix(confMatrix )
+
+    if Param_Data.permutation==true 
+        savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)_permut/"
+    else 
+        savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)_$(Param_Data_test.noise)/"
+    end 
+
+end 
 
 """
 Returns accuracy estimation (in percent), based on onecold estimator (label vector)
@@ -84,7 +150,7 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,Param_Data_test,savepathb
     allAccuracy = Float64[]
    
     (_,_,X_test,Y_test) =loadCSV_Synthetic(Param_Data_test) 
-
+@info(size(X_test))
     
     if Param_Network.Train_args.use_cuda
         device= gpu
@@ -93,12 +159,12 @@ function Confusion_Matrix_CSV(Param_Data,Param_Network,Param_Data_test,savepathb
     end
     dataTest  = Flux.Data.DataLoader((X_test, Y_test), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
     l̂,l = inference(model,dataTest,device)
-    #acc = getAccuracy(l̂,l) 
-    #@info acc
+    acc = getAccuracy(l̂,l) 
+    @info acc
     confMatrix = confusionMatrix(l̂,l,Param_Data.nbTx)
     plt = plotConfusionMatrix(confMatrix )
 
-    savepath ="Results/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
+    savepath ="Results/$(Param_Data_test.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.E)_$(Param_Data.S)"
     !ispath(savepath) && mkpath(savepath)
         Temp=zeros(1,Param_Data.nbTx)
         if Param_Data.Augmentation_Value.augmentationType == "No_channel"
@@ -124,16 +190,15 @@ function Confusion_Matrix_CSV_WiSig(Param_Data,Param_Network,Param_Data_test,sav
         hardware1 ="CPU"
     end 
     if savepathbson == ""
-       # if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
             savepathbson = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.nbSignals)/$(hardware1)"
-       # else 
-       #     savepathbson = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.nbSignals)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
-       # end 
+        else 
+            savepathbson = "run/WiSig/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.txs)_$(Param_Data.rxs)/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.nbSignals)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
+        end 
     end 
 
     allAcc = Float64[]
-        
-    res =RiFyFi_IdF.loadCNN("$(savepathbson)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson")
+    res = RiFyFi_IdF.loadCNN("$(savepathbson)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson")
 
     model = res.model
     testmode!(model, true)  # We are in test mode, with no dropout 
@@ -141,7 +206,6 @@ function Confusion_Matrix_CSV_WiSig(Param_Data,Param_Network,Param_Data_test,sav
     allAccuracy = Float64[]
    
     (_,_,X_test,Y_test) =WiSig_Database.loadCSV_WiSig(Param_Data_test) 
-
     
     if Param_Network.Train_args.use_cuda
         device= gpu
@@ -150,7 +214,7 @@ function Confusion_Matrix_CSV_WiSig(Param_Data,Param_Network,Param_Data_test,sav
     end
     device =cpu
     dataTest  = Flux.Data.DataLoader((X_test, Y_test), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
-    
+
     l̂,l = inference(model,dataTest,device)
     acc = getAccuracy(l̂,l) 
     @info "acc" acc
@@ -172,6 +236,7 @@ function Confusion_Matrix_CSV_WiSig(Param_Data,Param_Network,Param_Data_test,sav
             end 
         end
      MainPlottingMatrix_Latex(file,Param_Data.nbTx)
+
      return acc
 end
 
@@ -244,8 +309,11 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
         if Param_Data.Augmentation_Value.augmentationType == "No_channel"
             if Param_Data.permutation == true
                 savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_permut/$(hardware1)"
-            else 
+            elseif Param_Data.noise==nothing 
                 savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)/$(hardware1)"
+            else 
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_$(Param_Data.noise)/$(hardware1)"
+
             end        
         else 
             savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.nbSignals)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
@@ -265,6 +333,8 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
    
     (_,_,X_test,Y_test) =Experiment_Database.loadCSV_Exp(Param_Data_test) 
 
+    #(X_test_2,Y_test_2,_,_) =Experiment_Database.loadCSV_Exp(Param_Data_test) 
+
     
     if Param_Network.Train_args.use_cuda
         device= gpu
@@ -281,7 +351,7 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
     if Param_Data.permutation==true 
         savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)_permut/"
     else 
-        savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)/"
+        savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)_$(Param_Data_test.noise)/"
     end 
     !ispath(savepath) && mkpath(savepath)
         Temp=zeros(1,Param_Data.nbTx)
@@ -297,6 +367,13 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
             end 
         end
      MainPlottingMatrix_Latex(file,Param_Data.nbTx)
+
+
+   # dataTest_2  = Flux.Data.DataLoader((X_test_2, Y_test_2), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
+   # l̂,l = inference(model,dataTest_2,device)
+   # acc2 = getAccuracy(l̂,l) 
+   # @info "acc2" acc2
+   return acc
 end
 
 function MainPlottingMatrix_Latex(file,nbRadioTx=4,E="E2",S="S1",C="C1",Network="AlexNet",RFF="all_impairments",ChunkSize=256,batchsize=100)

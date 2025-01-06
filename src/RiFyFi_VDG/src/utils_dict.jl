@@ -1,4 +1,5 @@
-
+using Plots
+using PGFPlotsX 
 """ Try to load key from dict. Returns default if not found. If default is `missing` and key is not in dict, raised an error
 """
 function getKey(dict,key,default=missing)
@@ -52,6 +53,20 @@ function preProcessing!(X,moy,std_val)
 end
 
 
+function normalisation_sig(X)
+    N = length(X)
+    m = mean(X)
+    sigmaX = (1/(N-1)*sum(abs2.(X.-m))) # estimateur non biaisé de sigmaX
+    Y = (X.-m)./sqrt(sigmaX) # Normalisation de puissqance indépendante sur les deux voies 
+
+    return Y # avec sigma2 de Y =1 
+end 
+
+
+
+
+
+
 """ Transforme la matrice des labels en un vecteur d'indice 0-(NbRadios-1) """
 function create_bigMat_Labels_Tx(new_bigLabels)
     bigLabels   = zeros(Int,size(new_bigLabels)[2])
@@ -65,3 +80,24 @@ function create_bigMat_Labels_Tx(new_bigLabels)
 
     return bigLabels
 end
+
+
+
+
+function plotSigPArt2(signal, Param_Data,Name_sig)
+    # N = length(signal)
+    N = 1000
+    N = 16384
+    Fs = 5.2608e6
+    #Fs = 5e6
+    Ts = 1/Fs
+    xAx = Ts*(N-1):Ts:2*Ts*(N-1)
+    burst=64
+    sig= vec(signal[:,1,burst+1:burst+burst])
+    plt = plot(xAx*1000,sig,label="")
+    xlabel!("Time index [ms]")
+    ylabel!("Real part")
+    plt |> display
+    savefig(plt,"Chap3/$(Name_sig).pdf")
+
+end 

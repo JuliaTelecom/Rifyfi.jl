@@ -44,7 +44,7 @@ function create_X_Y_WiSig(Param_Data)
         @info size(X_train)
         # TEST
         X_train = X_trainTemp
-    Y_train = Y_trainTemp
+        Y_train = Y_trainTemp
     end 
     
     if shuffle
@@ -125,29 +125,6 @@ function create_bigMat_Labels_Tx(new_bigLabels)
     return bigLabels
 end
 
-#=
-""" Function that load data from the CSV file for WiSig database
-"""
-function loadCSV_WiSig(Param_Data)
-    ChunkSize = Param_Data.Chunksize
-    suffix =  "$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.pourcentTrain)_$(ChunkSize)"
-    X_train = CSV.read("CSV_Files/WiSig/$(suffix)/bigMatTrain_$suffix.csv", DataFrame) |> Matrix .|> Float32 |> transpose |> collect 
-    Y_train = CSV.read("CSV_Files/WiSig/$(suffix)/bigLabelsTrain_$suffix.csv", DataFrame) |> Matrix .|> Float32 |> transpose |> collect
-    X_test = CSV.read("CSV_Files/WiSig/$(suffix)/bigMatTest_$suffix.csv", DataFrame) |> Matrix |> transpose |> collect
-    Y_test = CSV.read("CSV_Files/WiSig/$(suffix)/bigLabelsTest_$suffix.csv", DataFrame) |> Matrix |> transpose |> collect
-    @show Y_test[1]
-    @show size(Y_test)
-    @show nbRadios = 1 + Int(maximum(Y_test)) # Radio index is between 0 and nbRadio -1
-
-    ChunkSize = size(X_train,1) ÷ 2
-    X_train = reshape(X_train,ChunkSize,2,:)[:,:,1:end÷2]
-    X_test  = reshape(X_test ,ChunkSize,2,:)[:,:,1:end÷2]
-    Y_train = transformLabels(Y_train,nbRadios)[:,1:end÷2]
-    Y_test  = transformLabels(Y_test,nbRadios)[:,1:end÷2]
-    @show size(X_train),size(X_test),size(Y_train),size(Y_test)
-    return (X_train,Y_train,X_test,Y_test)
-end
-=#
 
 """ Function that load data from the CSV file for Synthetic database
 """
@@ -156,24 +133,9 @@ function loadCSV_WiSig(Param_Data)
     nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals * size(Param_Data.days,1))
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
-    #if augmentationType == "No_channel"
+
     suffix =  "$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.pourcentTrain)_$(Param_Data.Chunksize)"
     savepath = "./CSV_Files/WiSig/$(suffix)"    
-    #=else  
-        channel = Param_Data.Augmentation_Value.Channel
-        channel_Test = Param_Data.Augmentation_Value.Channel_Test
-        nbAugment = Param_Data.Augmentation_Value.nb_Augment
-        savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
-        nbTrain = nbTrain * nbAugment
-        if augmentationType == "1channelTest"  
-            nbTest = nbTest * 1
-        elseif augmentationType == "same_channel"  
-            nbTest = nbTest * 1
-        else augmentationType == "augment"
-            nbTest = nbTest * 100
-        end 
-    end
-    =#
     # Labels 
     fileLabelTest= "$(savepath)/bigLabelsTest_$suffix.csv"
     Y_testTemp = Matrix(DataFrame(CSV.File(fileLabelTest;types=Int64,header=false)))
@@ -236,30 +198,6 @@ function setWiSigcsv(Param_Data)
    
     (bigMatTrain,bigLabels_Train,bigMatTest,bigLabels_Test) = create_X_Y_WiSig(Param_Data)
     
-    #################
-     #=
-    Param_Data.nbSignals=10000
-    Param_Data.pourcentTrain = 0.99
-    snr=10
-    BigMatTrain_New=zeros(Param_Data.Chunksize,2,Int(Param_Data.nbTx*Param_Data.nbSignals*Param_Data.pourcentTrain))
-    BigLabelsTrain_New=zeros(Param_Data.nbTx,Int(Param_Data.nbSignals*Param_Data.pourcentTrain*Param_Data.nbTx))
-    for i = 1 :1 : size(bigMatTrain)[3]
-        x=bigMatTrain[:,:,i]
-        powSig  = sum(abs.(x).^2) / length(x);
-        # --- Evaluation of noise power
-        powNoise  = sqrt(powSig) *  10^(-snr/20);
-        # --- Create a complex random sequence as additive noise
-        for k=1:1:11
-            n		  = randn(length(x))* powNoise;
-            BigMatTrain_New[:,1,(i-1)*11+k] = x[:,1] + n[1:256]
-            BigMatTrain_New[:,2,(i-1)*11+k] = x[:,2] + n[257:512]
-            BigLabelsTrain_New[:,(i-1)*11+k] = bigLabels_Train[:,i]
-        end 
-    end 
-    bigLabels_Train =BigLabelsTrain_New
-    bigMatTrain= BigMatTrain_New
-=#
-    ###############@
     bigLabels_Train = create_bigMat_Labels_Tx(bigLabels_Train)
     bigLabels_Test = create_bigMat_Labels_Tx(bigLabels_Test)
     savepath = "CSV_Files/WiSig/$(Param_Data.txs)_$(Param_Data.rxs)_$(Param_Data.days)_$(Param_Data.equalized)_$(Param_Data.pourcentTrain)_$(Param_Data.Chunksize)"

@@ -45,8 +45,6 @@ end
 
 #pa = parameters[r]["pa"] # on réccupère les paramètres du PA de la radio numéro r
     
-    
-
 #memory          = [1,2,2,2,2]
 #order           = 9
 #backoff         = 10 # In dB
@@ -82,9 +80,6 @@ function memoryPA(input,pa::Memory_PowerAmplifier,r)
     P = pa.order; # nonlinearity order of the PA   
     backoff =pa.backoff
 
-    ###### 
-    # A conserver 
-    #####
     # Scale input power according to the specified back-off  
     Pin = mean(abs.(input).^2);  # store the input power, and scale back to it after the TX model
     scale_input = 1/sqrt(10^(backoff/10)*Pin); # 0 dB back-off corresponds to input power=1

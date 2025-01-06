@@ -89,7 +89,6 @@ end
 """ Apply OFDM modulator to generate nbSymb based on configuration from `getConfig`
 """
 function tx(nbSymb)
-    #@infiltrate
     # --- Config 
     (nFFT,nCP,sizeSymb,mcs,crcSize,sampleRate,carrierFreq,nbBitsUncoded,inputFEC,outputFEC,allocatedSubcarriers,pilotSubcarriers,payloadSubcarriers,pilotVal,pilotTime,packetSize,nbRepeat) = getConfig()
     # --- Init buffers for binary and QAM data

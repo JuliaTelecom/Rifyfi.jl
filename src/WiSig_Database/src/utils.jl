@@ -7,7 +7,6 @@ export Pickle_to_matrix
 """
 function Pickle_to_matrix(Param_Data)
     # --- Load file 
-    
     obj = myunpickle(Param_Data.File_name)    
     # --- Estimate the number of burst for train and test
     nbBurstTotal    = evaluate_total_number_of_burst_Spec(obj,Param_Data.txs,Param_Data.rxs,Param_Data.days,Param_Data.equalized) 

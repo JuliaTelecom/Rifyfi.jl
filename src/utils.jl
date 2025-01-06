@@ -1,3 +1,5 @@
+using Plots
+using PGFPlotsX 
 """ 
 Input is (128*96_000) x 2
 Need to transform into 128 x 2 x 96_000 
@@ -138,7 +140,127 @@ function confusionMatrix(l̂::AbstractArray,l::AbstractArray,nbRadios::Number)
     return confMatrix 
 end
 
+function plotSigPArt2(signal, Param_Data,Name_sig)
+    # N = length(signal)
+    N = 1000
+    N = 16384
+    Fs = 5.2608e6
+    #Fs = 5e6
+    Ts = 1/Fs
+    xAx = Ts*(N-1):Ts:2*Ts*(N-1)
+    burst=64
+    sig= vec(signal[:,1,burst+1:burst+burst])
+    plt = plot(xAx*1000,sig,label="")
+    xlabel!("Time index [ms]")
+    ylabel!("Real part")
+    plt |> display
+    savefig(plt,"Chap3/$(Name_sig).pdf")
 
+end 
+
+function plotSig(signal, Param_Data,Name_sig)
+    # N = length(signal)
+    N = 1000
+    N = 16384
+    Fs = 5.2608e6
+    #Fs = 5e6
+    Ts = 1/Fs
+    xAx = 0:Ts:Ts*(N-1) 
+    burst=64
+    sig= vec(signal[:,1,1:burst])
+
+    plt = plot(xAx*1000,sig,label="")
+    ymin!=0
+    xlabel!("Time index [ms]")
+    ylabel!("Real part")
+    plt |> display
+    savefig(plt,"Chap3/$(Name_sig).pdf")
+    #pltnew=plot(real(signal[1:N]),imag(signal[1:N]),seriestype = :scatter)
+#=
+    sigF = abs2.(fftshift(fft(signal[1:N])))
+    xAx = ((0:1:N-1)/N .- 0.5)*Fs
+    plt = plot(xAx,10*log10.(sigF),label="")
+    xlabel!("Frequency [Hz]")
+    ylabel!("Magnitude [dB]")
+    plt |> display
+    =#
+end
+
+
+function plotPN(signal)
+    N=1000
+    Fs = 5.2608e6
+    #Fs = 5e6
+    Ts = 1/Fs
+    xAx = 0:Ts:Ts*(N-1) 
+    dictMarker  = ["square*","triangle*","diamond*","*","pentagon*","rect","otimes","triangle*"];
+    # --- Dictionnary for colors 
+    dictColor   = ColorSchemes.tableau_superfishel_stone
+    @pgf a = Axis({
+                height      ="3in",             # Size of Latex object, adapted to IEEE papers 
+                width       ="4in",
+                grid,
+                xlabel      = "Time [s]",       # X axis name 
+                ylabel      = "F1 score",       # Y axis name  
+                legend_style="{at={(1,0)},anchor=south east,legend cell align=left,align=left,draw=white!15!black}"         # Legend, 2 first parameters are important: we anchor the legend in bottom right (south east) and locate it in bottom right of the figure (1,0)
+                },
+    );
+
+
+
+    @pgf push!(a,Plot({color=dictColor[1],mark=dictMarker[1]},Table([xAx[:],signal[1:1:1000]])))
+    @pgf push!(a, LegendEntry("GPU")) # Train)
+ 
+    pgfsave("Results/PN_1.tex",a)
+
+end 
+
+
+function plotSig_brut(signal, Param_Data,Name_sig)
+    # N = length(signal)
+    N = 1000
+    N = 16384
+    Fs = 5.2608e6#5.2e9
+    #Fs = 5e6
+    Ts = 1/Fs
+    #xAx= Ts*(N-1):Ts:2*Ts*(N-1)
+    #xAx = 0:Ts:2*Ts*(N-1)
+    xAx = 0:Ts:Ts*(N-1) 
+    plt = plot(xAx*1000,real(fft(P[1:N])),label="")
+    xAx= Ts*(N-1):Ts:2*Ts*(N-1)
+    plt = plot!(xAx*1000,real(signal[N+1:N+N]),color=([RGB(1.0,0.6824,0.2039)]),label="")
+    xlabel!("Time index [ms]")
+    ylabel!("Real part")
+    plt |> display
+    savefig(plt,"Chap3/$(Name_sig).pdf")
+
+end 
+
+
+
+
+#=
+
+function plotSig_brut(signal, Param_Data,Name_sig)
+    # N = length(signal)
+    N = 1000
+    N = 16384
+    Fs = 5.2e9
+    #Fs = 5e6
+    Ts = 1/Fs
+    #xAx= Ts*(N-1):Ts:2*Ts*(N-1)
+    xAx = 0:Ts:2*Ts*(N-1)
+  #  xAx = 0:Ts:Ts*(N-1) 
+    plt = plot(xAx*1000000,real(signal[1:N+N-1]),color=([RGB(0.5,0.4,0.3)]),label="")
+    plt = plot(xAx*1000000,real(signal[1:N+N-1]),color=([RGB(0.5,0.4,0.3)]),label="")
+    xlabel!("Time index [μs]")
+    ylabel!("Real part")
+    plt |> display
+    savefig(plt,"Chap3/$(Name_sig).pdf")
+
+end 
+
+=#
 
 """
 Returns accuracy estimation (in percent), based on onecold estimator (label vector)
@@ -174,6 +296,7 @@ function getF1_score(l̂::AbstractArray,l::AbstractArray,nbRadios::Number)
 # (chosen instead of the global f1 score as it gives an equal weight to
 # the f1 score of each class, no matter its ratio within the observed
 # population)
+
 
 
 replace_nan!(x) = isnan(x) ? 0 : x
