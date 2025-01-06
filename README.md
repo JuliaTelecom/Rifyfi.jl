@@ -25,7 +25,7 @@ RiFyFi is composed of different subpackage
 - Results : Package to create some confusion matrix or F1 score evolution in function of time.
 
 <div align="center">
-  <img src="docs/RIFYFI_SYSTEM_1.pdf" alt="Makie.jl" width="500">
+  <img src="docs/RIFYFI_SYSTEM.png" alt="Makie.jl" width="500">
 </div>
 
 
