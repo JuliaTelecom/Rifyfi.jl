@@ -105,8 +105,7 @@ return the differents datasets.
 - creation of sequences, add impairments (fixed or random), add channels, shuffle, normalize.
 """
 function create_virtual_Database(Param_Data)
-    shuffle = false
-    @info "Create Tx"
+    shuffle = true
     # --- Def parameters
     E = Param_Data.E
     S = Param_Data.S

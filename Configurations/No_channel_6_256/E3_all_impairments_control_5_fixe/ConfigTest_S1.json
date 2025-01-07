@@ -1,0 +1,72 @@
+{
+ "nb_radios": 6,
+ "chunk_size": 256,
+ "nb_chunks": 10000,
+ "always_sync": false,
+ "seed_data": 1234,
+ "seed_models": 1598765432100000000,
+ "max_burst_size": 64,
+ "physical_layer": "hadoc",
+ "tx_policy": "random",
+ "carrier_freq": 2.4e9,
+ "sampling_rate": 4.0e6,
+ "with_iq_mismatch": true,
+ "with_cfo": true,
+ "with_phase_noise": true,
+ "with_nonLinearPA": true,
+ "with_channel": false,
+ "with_awgn": true,
+ "with_rx_power": false,
+ "nonLinearPA_models": [
+  "Saleh",
+  "Saleh",
+  "Saleh",
+  "Saleh"
+ ],
+ "nonLinearPA_random_range": [
+  -2,
+  3
+ ],
+ "nonLinearPA_base_saleh": [
+  2.1587,
+  1.1517,
+  4.0033,
+  9.104
+ ],
+ "base_g": 1.5,
+ "base_ϕ": 0.05235987755982988,
+ "iq_random_range_gain": [
+  -1,
+  2
+ ],
+ "iq_random_range_phase": [
+  -3,
+  2
+ ],
+ "base_cfo": 300,
+ "cfo_range": [
+  1,
+  2
+ ],
+ "phase_noise_model": "Wiener",
+ "phase_noise_base_σ": 1.0000000000000001e-7,
+ "phase_noise_range_σ": [
+  -8,
+  2
+ ],
+ "awgn_snr_base": 20,
+ "awgn_range": [
+  0,
+  0
+ ],
+ "channel_model": [
+  "multipath",
+  "multipath",
+  "multipath",
+  "multipath"
+ ],
+ "channel_nb_taps": 5,
+ "channel_τ_m": 15,
+ "channel_fix_channel": false,
+ "channel_seed": 687
+}

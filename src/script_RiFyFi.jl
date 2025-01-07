@@ -16,10 +16,10 @@ using .Results
 
 
 ########### Synthetic Data struct ###########
-name = "Test"
+name = "control_5_fixe"
 nameModel = name
 nbTx = 6
-nbSignals = 1000
+nbSignals = 10000
 Chunksize = 256
 features= "IQsamples"
 S = "S1"
@@ -28,7 +28,7 @@ C = "C2_20dB"
 RFF = "all_impairments"
 Normalisation = true
 pourcentTrain =0.9
-configuration  = "nothing"
+configuration  = "scenario"
 seed_data = 1234
 seed_model = 2345
 if E == "E1" || E == "E2"
@@ -60,11 +60,11 @@ Augmentation_Value = RiFyFi_VDG.Data_Augmented(;augmentationType,Channel,Channel
 
 ########### Args Network struct ###########
 
-η = 1e-4            # learning rate e-5
+η = 1e-4           # learning rate e-5
 dr = 0.25
 #λ = 0               # L2 regularizer param, implemented as weight decay
 batchsize = 600     # batch size
-epochs = 10        # number of epochs
+epochs = 100        # number of epochs
 #seed = 12           # set seed > 0 for reproducibility
 use_cuda = true     # if true use cuda (if available)
 #infotime = 1 	    # report every `infotime` epochs
@@ -101,7 +101,7 @@ Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSigna
 RiFyFi.main(Param_Data,Param_Network)   #filename is the .pkl file    
 
 
-NbSignals_test =10000
+NbSignals_test =1000
 C_test="C2"
 configuration  = "scenario" # use the previous RFF scenario to create new signals
 

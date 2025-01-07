@@ -99,14 +99,14 @@ end
 
 """ Function that load Data in Matrix format and initialize the Network
     Parameters : 
-    - Param_Data type Data_Synth ou Data_WiSig 
+    - Param_Data type Data_Synth or Data_WiSig or Data_Oracle
     - Param_Network type of Network_struct
 """
 function init(Param_Data,Param_Network)
     # ----------------------------------------------------
     # --- Loading and pre-processing data 
     # ---------------------------------------------------- 
-    @info "init"
+    @info "init Data $(Param_Data.name)"
     Random.seed!(Param_Network.Seed_Network)
     if Param_Data.name== "WiSig"
         (X_train,Y_train,X_test,Y_test)=WiSig_Database.loadCSV_WiSig(Param_Data)
@@ -115,7 +115,7 @@ function init(Param_Data,Param_Network)
     elseif Param_Data.name== "Exp"
         (X_train,Y_train,X_test,Y_test)=Experiment_Database.loadCSV_Exp(Param_Data)
     else # Synthetic data 
-        (X_train,Y_train,X_test,Y_test)=loadCSV_Synthetic(Param_Data)
+        (X_train,Y_train,X_test,Y_test)=RiFyFi_VDG.loadCSV_Synthetic(Param_Data)
     end 
     # ----------------------------------------------------
     # --- Create datasets
@@ -126,7 +126,7 @@ function init(Param_Data,Param_Network)
     # ----------------------------------------------------
     # --- Init Network
     # ---------------------------------------------------- 
-    @info "Init Network "
+    @info "Init Network $(Param_Network.Networkname)"
     if Param_Network.Networkname == "AlexNet"
         (nn,loss)= initAlexNet(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname=="NewCNN"
