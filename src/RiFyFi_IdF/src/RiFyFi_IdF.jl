@@ -22,7 +22,7 @@ export initNewCNN
 export initWiSig
 
 
-function initWiSig(x,nbRadioTx,dr)# tiré de WiSig  
+function initWiSig(x,nbRadioTx,dr) # from WiSig article referenced in WiSig_Database --> README
 m = Chain(
         #    x -> reshape(x, (size(x)[1], 2, 1, size(x)[3])),
             Conv((3,2), 1 => 8, pad=SamePad(), relu),
@@ -47,7 +47,7 @@ m = Chain(
         return (m,loss)
 end
 
-function initNewCNN(x,nbRadioTx,dr)# tiré de Oracle 
+function initNewCNN(x,nbRadioTx,dr)# from Oralce article referenced in Oracle_Database --> README
     m = Chain(
         #----------------------------------------------------
         # --- Convolutionnal layers
@@ -56,20 +56,19 @@ function initNewCNN(x,nbRadioTx,dr)# tiré de Oracle
         Conv((7,), 2 => 50, pad=SamePad(), relu),
         Conv((7,), 50 => 50, pad=SamePad(), relu),
         Flux.flatten,
-        Dense(50*x, 256, relu), # 1024 = 8 * 128
+        Dense(50*x, 256, relu), 
         Dropout(dr),
         Dense(256, 80, relu),
         Dropout(dr),
-        Dense(80,nbRadioTx), # Couche non indiquée sur la doc mais obligatoire pour avoir un Softmax correct
+        Dense(80,nbRadioTx), # Required layer to used softmax 
         softmax
        )
-    testmode!(m, false) # Important sinon le CNN ne prend pas en compte le drop out = surapprentissage
+    testmode!(m, false) # Required to take into account the drop out and reduce overlearning 
     loss(ŷ, y)= crossentropy(ŷ, y)
     return (m,loss)
 end
 
 function initAlexNet(x,nbRadioTx,dr)
-    #dr = 0 #Dropout rate
     sizeEnd= Int(x*128/2^4)
     m = Chain(
               # ----------------------------------------------------
@@ -87,7 +86,7 @@ function initAlexNet(x,nbRadioTx,dr)
               Conv((7,), 128 => 128, pad=SamePad(), relu),
               Conv((5,), 128 => 128, pad=SamePad(), relu),
               MaxPool((2,)),
-              # # Bloc 4
+              # Bloc 4
               Conv((7,), 128 => 128, pad=SamePad(), relu),
               Conv((5,), 128 => 128, pad=SamePad(), relu),
               MaxPool((2,)),
@@ -105,7 +104,7 @@ function initAlexNet(x,nbRadioTx,dr)
               Dense(128,nbRadioTx), 
               Flux.softmax
              )
-    testmode!(m, false) #prise en compte du drop out pour éviter le surapprentissage
+    testmode!(m, false) # Required to take into account the drop out and reduce overlearning 
     loss(ŷ, y)= crossentropy(ŷ, y)
     return (m,loss)
 end
@@ -130,7 +129,7 @@ function initGDA(x,nbRadioTx,dr)
             Dense(4,nbRadioTx),
             Flux.softmax
              )
-    testmode!(m, false) # Important sinon le CNN ne prend pas en compte le drop out = surapprentissage
+    testmode!(m, false) # dropout used
     loss(ŷ, y)= crossentropy(ŷ, y)
     return (m,loss)
 end
@@ -146,17 +145,6 @@ function loadCNN(cnnPath)
     trainAcc  = dict[:trainAcc]
     testLoss  = dict[:testLoss]
     trainLoss = dict[:trainLoss]
-    #=moy = 0 
-        std = 1
-    try 
-        moy = dict[:moy] 
-    catch exception
-    end
-    try 
-        std= dict[:std] 
-    catch exception
-    end =#
-    #return (model=model,testAcc=testAcc,trainAcc=trainAcc,testLoss=testLoss,trainLoss=trainLoss,moy=moy,std=std)
     return (model=model,testAcc=testAcc,trainAcc=trainAcc,testLoss=testLoss,trainLoss=trainLoss)
 end
 

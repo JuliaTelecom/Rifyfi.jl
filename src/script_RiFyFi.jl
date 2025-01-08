@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------
+# This script allow to create a virtual database thanks to RiFyFi_VDG package 
+# And use this database to train a network and then create confusion matrix and F1-score evolution
+# --------------------------------------------------------------------------------
+
 using RiFyFi
 using Infiltrator
 using RFImpairmentsModels 
@@ -16,7 +21,7 @@ using .Results
 
 
 ########### Synthetic Data struct ###########
-name = "control_5_fixe"
+name = "5_pourcent"
 nameModel = name
 nbTx = 6
 nbSignals = 10000
@@ -91,27 +96,38 @@ Train_args = RiFyFi_IdF.Args(η = η ,dr=dr, epochs= epochs,batchsize=batchsize,
 # ---------------------------------------------------------------------------------------------
 savepathbson=""
 
-
+# Creation of the data structure with the information of the dataset
 Param_Data = RiFyFi_VDG.Data_Synth(name,nameModel,nbTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value)
+# Train and test Datasets are created and saved in CSV files
 RiFyFi_VDG.setSynthetiquecsv(Param_Data)
 
 
-
+# Creation of the Network structure with the information of the network
 Param_Network = RiFyFi_IdF.Network_struct(;Networkname,NbClass,Chunksize,NbSignals,Seed_Network,Train_args) 
-RiFyFi.main(Param_Data,Param_Network)   #filename is the .pkl file    
+# Train the network and save it 
+RiFyFi.main(Param_Data,Param_Network)   
+
+# Create a figure to show the evolution of the F1-score during the training 
+Results.main(Param_Data,Param_Network,"F1_score",savepathbson,Param_Data,[Seed_Network])
+# Create a confusion matrix with testing dataset
+Results.main(Param_Data,Param_Network,"Confusion_Matrix",savepathbson,Param_Data,[Seed_Network])
 
 
-NbSignals_test =1000
-C_test="C2"
+# Define an other transmission scenario with the same RFF
+NbSignals_test = 1000
+C_test = "C2"
 configuration  = "scenario" # use the previous RFF scenario to create new signals
 
+# Use for example data augmentation to add different channel realisation 
 Augmentation_Value_test = Augmentation.Data_Augmented_construct(augmentationType="augment",nb_Augment=1,Channel=Channel,Channel_Test=Channel_Test)
+# Creation of the new data structure with the information of the dataset
 Param_Data_test = RiFyFi_VDG.Data_Synth(name,nameModel,nbTx, NbSignals_test, Chunksize,features,S,E,C_test,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value_test)
+# Train and test Datasets are created and saved in CSV files
 RiFyFi_VDG.setSynthetiquecsv(Param_Data_test)
 
-
-Results.main(Param_Data,Param_Network,"F1_score",savepathbson,Param_Data,[Seed_Network])
+# Use the Param_Data_test dataset to evaluated the resilience of the trained network in the new transmission scenario
 Results.main(Param_Data,Param_Network,"Confusion_Matrix",savepathbson,Param_Data_test,[Seed_Network])
+
 
  
 

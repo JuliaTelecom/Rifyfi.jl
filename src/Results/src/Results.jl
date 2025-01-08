@@ -21,6 +21,12 @@ include("../../LatexConfusionMatrix/src/LatexConfusionMatrix.jl")
 using .LatexConfusionMatrix
 
 include("Prod_ConfusionMatrix.jl")
+include("VDG_Results.jl")
+include("Oracle_Results.jl")
+include("WiSig_Results.jl")
+include("Exp_Results.jl")
+
+
 
 include("../../Augmentation/src/Augmentation.jl")
 using .Augmentation
@@ -76,8 +82,7 @@ function main(Param_Data,Param_Network,Type_Resuts,savepathbson,Param_Data_test,
 end 
 
 
-
-
+#=
 function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson="")
     
     if Param_Network.Train_args.use_cuda ==true 
@@ -469,5 +474,5 @@ function Compute_mean(Param_Data,Param_Network,nameSituation,Table_Seed_Network)
 end 
 
 
-
+=#
 end 

@@ -131,7 +131,7 @@ function create_virtual_Database(Param_Data)
         # --- Generate Database random database correspond to the parameters and configuration
         tupTrain = generateDatabase(configurationTrain,E,S,C,RFF,name,Int(Param_Data.nbSignals*Param_Data.pourcentTrain))
         tupTest = generateDatabase(configurationTest,E,S,C,RFF,name,Param_Data.nbSignals-Int(Param_Data.nbSignals*Param_Data.pourcentTrain))
-        # Saving configuration of the Database with value of impairments
+        # --- Saving configuration of the Database with value of impairments
         saveScenario("$(savePath)/scenario.json",tupTrain.dict_out)
     # ---------------------------------------------------------------------------
     # --- Create configuration with fixe RFF impairments define in scenario file
@@ -160,7 +160,7 @@ function create_virtual_Database(Param_Data)
     X_trainTemp = tupTrain.bigMat
     X_testTemp = tupTest.bigMat
 
-    # --- Pour chaque radio TX on complète les matrices de labels  
+    # --- Complete the matrix for each Tx  
     Y_trainTemp = zeros(Param_Data.nbTx,nbTrain)
     Y_testTemp = zeros(Param_Data.nbTx,nbTest)
     for iR =1 :1:Param_Data.nbTx
@@ -183,14 +183,14 @@ function create_virtual_Database(Param_Data)
         seed_channel_test = Param_Data.Augmentation_Value.seed_channel_test
         burstSize = Param_Data.Augmentation_Value.burstSize
         if Param_Data.Augmentation_Value.augmentationType=="augment" 
-            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # on génère toujours nbSignaux par canal 
+            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # nbSignal per channel 
             ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,channel,Param_Data.Chunksize,nbAugment,Param_Data.nbTx,seed_channel,burstSize)
             # TEST
             N = Param_Data.nbSignals - N 
             nbAugment_Test = 100
             (X_test,Y_test)=Augmentation.Add_diff_Channel_train_test(X_testTemp,Y_testTemp,N,channel_Test,Param_Data.Chunksize,nbAugment_Test,Param_Data.nbTx,seed_channel_test,burstSize)
         elseif Param_Data.Augmentation_Value.augmentationType=="same_channel"
-            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # on génère toujours nbSignaux par canal 
+            N = Int(Param_Data.nbSignals * Param_Data.pourcentTrain) # nbSignal per channel 
             ( X_train,Y_train)=Augmentation.Add_diff_Channel_train_test(X_trainTemp,Y_trainTemp,N,channel,Param_Data.Chunksize,nbAugment,Param_Data.nbTx,seed_channel,burstSize)
             # TEST
             N = Param_Data.nbSignals - N 
@@ -235,12 +235,11 @@ function create_virtual_Database(Param_Data)
     # ----------------------------------------
     if Param_Data.Normalisation
         # Two types of normalisation: Normalize all the dataset // Normalize each group of sequence
-
         #= 
         ## Nomalize all dataset ##
         (moy,std_val) = (0,0)
         (moy,std_val) = preProcessing!(X_train,nothing,nothing)
-       (moy,std_val) = preProcessing!(X_test,moy,std_val)
+        (moy,std_val) = preProcessing!(X_test,moy,std_val)
         =#
      
         ##  Normalize each group of sequence ##
@@ -288,8 +287,7 @@ function create_virtual_Database(Param_Data)
 end
 
 
-""" Function that load data from the CSV file for Synthetic database
-"""
+""" Function that load data from the CSV file for Synthetic database """
 function loadCSV_Synthetic(Param_Data)
     augmentationType = Param_Data.Augmentation_Value.augmentationType
     ChunkSize = Param_Data.Chunksize
@@ -300,7 +298,6 @@ function loadCSV_Synthetic(Param_Data)
     RFF = Param_Data.RFF
     name = Param_Data.name
     pourcentTrain = Param_Data.pourcentTrain
-
     nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals)
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
@@ -461,53 +458,28 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
     dict_out    = Dict()
     X=zeros(ComplexF32,548*nb_symb_per_bursts*nb_bursts,nb_radios)
 
-
- 
-
-
-
-    # --- Iterative generation 
-    #=
-    X_brut = zeros(Float32,4,263040,2)
-    savepath = "CSV_Files/sans_4_256/E1_S2/E1_S2_C1_all_impairments_1000_"
-    brut1= "$(savepath)/X_brut1.csv"
-    X_brut[1,:,:] = Matrix(DataFrame(CSV.File(brut1;types=Float64,header=false)))
-    brut2= "$(savepath)/X_brut2.csv"
-    X_brut[2,:,:] = Matrix(DataFrame(CSV.File(brut2;types=Float64,header=false)))
-    brut3= "$(savepath)/X_brut3.csv"
-    X_brut[3,:,:] = Matrix(DataFrame(CSV.File(brut3;types=Float64,header=false)))
-    brut4= "$(savepath)/X_brut4.csv"
-    X_brut[4,:,:] = Matrix(DataFrame(CSV.File(brut4;types=Float64,header=false)))
-    nbIQ= 16440
-    =#
     for r ∈ 1 : nb_radios
-        #=
-        if r==1 
-            permut=3
-            r=permut
-        end    
-        =#
         # ----------------------------------------------------
         # --- Instantiate Impairments models  
         # ---------------------------------------------------- 
         if E=="E1"
-            Random.seed!(seed_models  ) # sans le + r on génère touours la même empreinte
+            Random.seed!(seed_models  ) # without r allways the same fingerprint 
             s_mismatch = instantiateImpairments(setup_IQMismatch,s_d_mismatch,dict,1)
             s_cfo       = instantiateImpairments(setup_CFO,s_d_cfo,dict,1)
             s_phaseNoise    = instantiateImpairments(setup_phaseNoise,s_d_phaseNoise,dict,1)
         else
-            Random.seed!(seed_models  + r) # sans le + r on génère touours la même empreinte
+            Random.seed!(seed_models  + r) # with r to create different fingerprint
             s_mismatch = instantiateImpairments(setup_IQMismatch,s_d_mismatch,dict,r)
             s_cfo       = instantiateImpairments(setup_CFO,s_d_cfo,dict,r)
             s_phaseNoise    = instantiateImpairments(setup_phaseNoise,s_d_phaseNoise,dict,r)
         end
 
         if E=="E3"
-            s_phaseNoise.seed= -1 # seed relachée
+            s_phaseNoise.seed= -1 # let seed 
         elseif E=="E1" 
-            s_phaseNoise.seed= 1  # seed fixe pour une radio 
+            s_phaseNoise.seed= 1  # fixe the seed for all Tx
         else 
-            s_phaseNoise.seed= r  # seed fixe pour une radio
+            s_phaseNoise.seed= r  # fixe the seed for each Tx
         end
 
         # --- Instantiate PA
@@ -553,10 +525,8 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
             # We should start to random phase for PN 
             
             randomize_phaseNoise!(s_phaseNoise)
-            # @info k , s_phaseNoise
-            # ajout de bruit 
+            # add noise
             Random.seed!(seed_models + (r-1)* nb_bursts + r + k )   
-
             s_noise = setup_awgn(dict,r,k)
 
             # We calculate a new fading factor FIXME => Related to SNR ? 
@@ -578,10 +548,8 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
             x=x.*10
             nbIQperBurst =548*nb_symb_per_bursts
             X[(k-1)*nbIQperBurst+1:k*nbIQperBurst,r] = x
-           #  X = x
-
             # -------------------------------------------
-            # -- Tx impairments avec seed Fingerprint
+            # -- Tx impairments with different Fingerprint seed 
             # -------------------------------------------
             if Fingerprint_policy == "random"
                 if E=="E1"
@@ -617,13 +585,12 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
                         x = addNonLinearPA(x,s_nonLinearPA)
                     else
                         y = addNonLinearPA(x,s_nonLinearPA)
-                     #  PlotingAMAM_Saleh(x[1:2000],y[1:2000],RFF,r,E,S,C,name)
                         x = y
                     end 
             else     
                 # All Impairments 
                 addIQMismatch!(x,s_mismatch)
-                addPhaseNoise!(x,s_phaseNoise) # Imperfection Dynamique 
+                addPhaseNoise!(x,s_phaseNoise) # Dynamic impairment  
                 RFImpairmentsModels.addCFO!(x,s_cfo)
                 if RFF=="all_impairments_memory"
                   x=addNonLinearPA_memory(x,s_nonLinearPA,r)
@@ -648,6 +615,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
 
             # ----------------------------------------------------
             # Rx impairments - A completer ailleur 
+            # Not taking into account here 
             # ----------------------------------------------------  
     
             if k== nb_bursts
@@ -738,15 +706,15 @@ function createConfiguration(filename,ChunkSize,nbRadioTx,nbSignaux,C,seed_model
     # --- Radio mode 
     dict = OrderedDict(
                        :nb_radios => nbRadioTx,
-                       :chunk_size  => ChunkSize,           # Slice of data feed to NN 
+                       :chunk_size  => ChunkSize,       # Slice of data feed to NN 
                        :nb_chunks  => nbSignaux,        # Per radios
-                       :always_sync => false,         # Ensure each chunck is sync with OFDM symbol
-                       :seed_data => seed_data,# 123456,          # To have a seed to generate radio parameters  # seed_data
-                       :seed_models=> seed_model, #234567,
-                       :max_burst_size => 64,#100,       # Number of chunks for one generated burst 
+                       :always_sync => false,           # Ensure each chunck is sync with OFDM symbol
+                       :seed_data => seed_data,         # To have a seed to generate radio parameters  # seed_data
+                       :seed_models=> seed_model, 
+                       :max_burst_size => 64,           # Number of chunks for one generated burst 
                        # --- Tx 
                        :physical_layer => "hadoc",
-                       :tx_policy => "random",       # Transmitted signal policy: Random : each radio tranmsit different signal. Consistent :> each radio transmit sames burst
+                       :tx_policy => "random",          # Transmitted signal policy: Random : each radio tranmsit different signal. Consistent :> each radio transmit sames burst
                        # --- Frequency mode 
                        :carrier_freq    => 2400e6,
                        :sampling_rate   => 4e6,
@@ -761,23 +729,23 @@ function createConfiguration(filename,ChunkSize,nbRadioTx,nbSignaux,C,seed_model
                        # --- Range of parameters 
                        # One model per radio 
                        :nonLinearPA_models   => [:Saleh,:Saleh,:Saleh,:Saleh],
-                       :nonLinearPA_random_range => (-2,3),#(-1,3),#(-2,3),    # config (-2,3) / config2(-1,3)    # (x,y) calls myRand
+                       :nonLinearPA_random_range => (-2,3),   # config (-2,3) / config2(-1,3)    # (x,y) calls myRand
                        :nonLinearPA_base_saleh => [2.1587,1.1517,4.0033,9.1040],
                        # IQ Mismatch 
-                       :base_g              => 1.5,   # Base for gain, in dB
+                       :base_g              => 1.5,       # Base for gain, in dB
                        :base_ϕ              => 3*π/180,   # Base for phase, in rad
                        :iq_random_range_gain => (-1,2), 
-                       :iq_random_range_phase => (-3,2), # passer de -1 à -3
+                       :iq_random_range_phase => (-3,2),  
                        # CFO 
-                       :base_cfo        => 300,   # In Hz 
+                       :base_cfo        => 300,           # In Hz 
                        :cfo_range   => (1,2),
                        # Phase noise 
                        :phase_noise_model => :Wiener,
                        :phase_noise_base_σ => 10.0^(tmp_σ),
                        :phase_noise_range_σ => (tmp_σ - 1,2) ,
                        # AWGN 
-                       :awgn_snr_base => noize, # passage de 20 à 30
-                       :awgn_range    =>(0,0),# (-1,2),# changé 0 en -1 # 0,2 leads to -9.9 to 9.9 =>=>> Divided by 2 in setup_awgn
+                       :awgn_snr_base => noize,     
+                       :awgn_range    =>(0,0),           # 0,2 leads to -9.9 to 9.9 =>=>> Divided by 2 in setup_awgn
                        # Channel model 
                        :channel_model => [:multipath,:multipath,:multipath,:multipath],
                        :channel_nb_taps => 5,
