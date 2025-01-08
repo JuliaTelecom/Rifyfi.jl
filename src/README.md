@@ -45,14 +45,14 @@ By running the file without modification you will obtained the result below.
 
 In run/Synth/No_channel_6_256_AlexNet/E3_S1_C2_20dB_all_impairments_10000_5_pourcent/GPU
 <div align="center">
-  <img src="docs/F1-scoreV1.png" alt="Makie.jl" width="380">
+  <img src="../docs/F1-scoreV1.png" alt="Makie.jl" width="380">
 </div>
 
 <div align="center">
-  <img src="docs/CMV1.png" alt="Makie.jl" width="380">
+  <img src="../docs/CMV1.png" alt="Makie.jl" width="380">
 </div>
 
 
 <div align="center">
-  <img src="docs/CMV1_augment.png" alt="Makie.jl" width="380">
+  <img src="../docs/CMV1_augment.png" alt="Makie.jl" width="380">
 </div>
