@@ -115,7 +115,6 @@ end
 
 
 function initGDA(x,nbRadioTx,dr)
-   # dr = 0.5 #Dropout rate
     m = Chain(
             Conv((10,), 2 => 64, pad=SamePad(), relu),
             MaxPool((2,)),
@@ -162,8 +161,8 @@ function inference(model,dataset,device)
     Y = Int[]
     
     for (x,label) in dataset
-      #  xG = reshape(x, (256,2,1,(size(x))[3])) |> device # To GPU 
-      #  xG = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
+      #  xG = reshape(x, (256,2,1,(size(x))[3])) |> device # SOMETIME required depending of the network architecture 
+      #  xG = reshape(x, (size(x)[1], 2, 1, size(x)[3]))  # SOMETIME required depending of the network architecture 
 
         xG = x |> device # To GPU 
         r = mm(xG) |> cpu # Infer model in GPU. Output is soft matrix 

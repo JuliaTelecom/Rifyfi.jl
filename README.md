@@ -60,4 +60,7 @@ You can use RiFyFi in two manners:
 -   Define the value of the impairments parameters with scenario file, for example a scenario file is propose with 6 transmitters and 5% of similarity between Impairments. 
 
 
+Please if you have any question don't hesitate to contacte me : alice.chillet@irisa.fr
+
+
 

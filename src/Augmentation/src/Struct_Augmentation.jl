@@ -1,10 +1,10 @@
 Base.@kwdef mutable struct Data_Augmented
     augmentationType::String = "No_channel"
-    Channel::String = "etu"
-    Channel_Test::String = "etu"
+    Channel::String = "mulitpath"
+    Channel_Test::String = "mulitpath"
     nb_Augment::Int = 1
     seed_channel::Int = 12
-    seed_channel_test::Int = 12#999999999 * 100000000
+    seed_channel_test::Int = 12
     burstSize::Int =64
 end
 
@@ -20,13 +20,13 @@ function Data_Augmented_construct(; kwargs...)
     if haskey(kwargs, :Channel)
         Channel = kwargs[:Channel]
     else 
-        Channel = "etu"
+        Channel = "mulitpath"
     end
 
     if haskey(kwargs, :Channel_Test)
         Channel_Test = kwargs[:Channel_Test]
     else 
-        Channel_Test = "etu"
+        Channel_Test = "mulitpath"
     end
 
     if haskey(kwargs, :nb_Augment)

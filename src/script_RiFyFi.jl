@@ -50,10 +50,10 @@ end
 
 
 ########### Augmentation struct ###########
-augmentationType = "No_channel"
+augmentationType = "augment"
 Channel = "etu"
 Channel_Test = "etu"
-nb_Augment = 1
+nb_Augment = 100
 #seed_channel = 12
 #seed_channel_test = 12
 #burstSize =64
@@ -69,7 +69,7 @@ Augmentation_Value = RiFyFi_VDG.Data_Augmented(;augmentationType,Channel,Channel
 dr = 0.25
 #λ = 0               # L2 regularizer param, implemented as weight decay
 batchsize = 600     # batch size
-epochs = 100        # number of epochs
+epochs = 1000        # number of epochs
 #seed = 12           # set seed > 0 for reproducibility
 use_cuda = true     # if true use cuda (if available)
 #infotime = 1 	    # report every `infotime` epochs
@@ -99,7 +99,7 @@ savepathbson=""
 # Creation of the data structure with the information of the dataset
 Param_Data = RiFyFi_VDG.Data_Synth(name,nameModel,nbTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value)
 # Train and test Datasets are created and saved in CSV files
-RiFyFi_VDG.setSynthetiquecsv(Param_Data)
+#RiFyFi_VDG.setSynthetiquecsv(Param_Data)
 
 
 # Creation of the Network structure with the information of the network
@@ -119,10 +119,12 @@ C_test = "C2"
 configuration  = "scenario" # use the previous RFF scenario to create new signals
 
 # Use for example data augmentation to add different channel realisation 
-Augmentation_Value_test = Augmentation.Data_Augmented_construct(augmentationType="augment",nb_Augment=1,Channel=Channel,Channel_Test=Channel_Test)
+Augmentation_Value_test = Augmentation.Data_Augmented_construct(augmentationType="augment",nb_Augment=2,Channel=Channel,Channel_Test=Channel_Test)
 # Creation of the new data structure with the information of the dataset
 Param_Data_test = RiFyFi_VDG.Data_Synth(name,nameModel,nbTx, NbSignals_test, Chunksize,features,S,E,C_test,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value_test)
 # Train and test Datasets are created and saved in CSV files
+
+
 RiFyFi_VDG.setSynthetiquecsv(Param_Data_test)
 
 # Use the Param_Data_test dataset to evaluated the resilience of the trained network in the new transmission scenario

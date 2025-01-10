@@ -12,7 +12,7 @@ Don't hesitate to use this README as a tutorial if you want to understand the di
 Use the script script_RiFyFi.jl if you have aldready install julia and RiFyFi package and instantiate it you can run the script
 
 
-```pkg
+```
 julia> include("src/script_RiFyFi.jl")
 ```
 
@@ -43,16 +43,54 @@ The choosed network is called AlexNet and the training parameters are define suc
 By running the file without modification you will obtained the result below.
 
 
-In run/Synth/No_channel_6_256_AlexNet/E3_S1_C2_20dB_all_impairments_10000_5_pourcent/GPU
+In run/Synth/No_channel_6_256_AlexNet/E3_S1_C2_20dB_all_impairments_10000_5_pourcent/GPU 
+you can found this type of figure with the F1-score evolution in function of time.
 <div align="center">
   <img src="../docs/F1-scoreV1.png" alt="Makie.jl" width="380">
 </div>
 
+
+In Results/No_channel_6_256_AlexNet
+You can found the Confusion Matrix obtained in test
 <div align="center">
   <img src="../docs/CMV1.png" alt="Makie.jl" width="380">
 </div>
 
-
+Then in Results/augment_6_256_AlexNet
+You can found the Confusion Matrix obtained in test with the adding of propagation channel model
 <div align="center">
   <img src="../docs/CMV1_augment.png" alt="Makie.jl" width="380">
 </div>
+
+The Confusion matrix show that the network is not able to classify/identify correctly the transmitters means that the channel resilience is bad.
+
+
+Now you can change the content of script_RiFyFi.jl to train a network with an other database (RFF scenario, more transmitters, transmission scenario)
+
+
+To illustrate the possibilities you can choose to add data augmentation in the training dataset and then evaluated the resilience of the network.
+
+In the script change the following lines:
+```
+########### Augmentation struct ###########
+augmentationType = "augment"
+Channel = "etu"
+Channel_Test = "etu"
+nb_Augment = 100
+#seed_channel = 12
+#seed_channel_test = 12
+#burstSize =64
+```
+
+You can train different networks with different nb_Augment values and observed the impact of the propagation channel diversity on the network resilience.
+
+
+
+
+
+
+
+
+
+
+## RiFyFi with WiSig Database

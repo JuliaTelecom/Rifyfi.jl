@@ -32,12 +32,10 @@ function F1Score(loader,model,device=cpu)
     fn = zeros(nbClass) # false negative
     for (x, y) in loader
         # Load to CPU
-     #   x = reshape(x, (size(x)[1], 2, 1, size(x)[3])) 
-
+        #   x = reshape(x, (size(x)[1], 2, 1, size(x)[3]))  # SOMETIME required depending of the network architecture 
         xd = x |> device
         # Train, bring back and decision
-      #  ŷ = model(reshape(xd, (256,2,1,(size(xd))[3]))) |> cpu  |> onecold
-      
+        #  ŷ = model(reshape(xd, (256,2,1,(size(xd))[3]))) |> cpu  |> onecold  # SOMETIME required depending of the network architecture 
         ŷ = model(xd) |> cpu  |> onecold
         y = onecold(y)
         # --- Compute metrics for each class 
@@ -58,8 +56,7 @@ function F1Score(loader,model,device=cpu)
     # Macro average approach, calculate precision and recall per class  and average
     # Mirror to what is done in Gegelati, with same argument 
     # (chosen instead of the global f1 score as it gives an equal weight to
-    # the f1 score of each class, no matter its ratio within the observed
-    # population)
+    # the f1 score of each class, no matter its ratio within the observed population)
     replace_nan!(x) = isnan(x) ? 0 : x
     precision = (tp ./ (tp .+ fp)) 
     recall    = (tp ./ (tp .+ fn))
@@ -71,8 +68,9 @@ end
 
 
 
-
-
+""" Train the network on GPU or CPU, evaluated the performance of the network after each epoch and measured the time of training.
+return the network model with train weight, the performance of the network and the training parameters 
+"""
 function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # ----------------------------------------------------
     # --- CPU or GPU
@@ -96,13 +94,10 @@ function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # --- Optimizer
     ps = Flux.params(model)  
     opt = ADAM(Param_Network.Train_args.η) 
-
     # ----------------------------------------------------
     # --- Closure for performance evaluation
     # --- Comment if you are on specific hardware 
     # ---------------------------------------------------- 
-
-    
     function report(epoch)
         train = eval_loss_accuracy(dataTrain, model, Param_Network.loss, device)
         test = eval_loss_accuracy(dataTest, model,Param_Network.loss, device)        
@@ -115,7 +110,6 @@ function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     # ---------------------------------------------------- 
     @info "Start Training"
     ###### Comment if need ###################################################
-    #report(0) 
     trainLoss = Float32[]
     trainAcc= Float32[]
     testLoss  = Float32[]
@@ -126,25 +120,23 @@ function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     ta=0
     epoch =0
     Random.seed!(Param_Network.Seed_Network)
-    while epoch < Param_Network.Train_args.epochs && ta < 98.0
+    while epoch < Param_Network.Train_args.epochs && ta < 98.0 # Possible to implement an other end-criterion, Wait for a performance or stop after a number of epochs defined by the user.
         epoch = epoch+1
         Param_Network.Train_args.tInit = time() # Set up time of origin
         # Train 
-        @showprogress for (x, y) in dataTrain  
-           
-            x, y = x |> device, y |> device        
+        # dataTrain has a praticular format (dataloader), the sequences are given one after the other and grouped by batch  
+        @showprogress for (x, y) in dataTrain   
+            x, y = x |> device, y |> device     # load data
             gs = Flux.gradient(ps) do
-                ŷ = model(x)
-                Param_Network.loss(ŷ, y)
+                ŷ = model(x)                    # estimate the label 
+                Param_Network.loss(ŷ, y)        # calcul the loss 
             end
-            Flux.Optimise.update!(opt, ps, gs)
+            Flux.Optimise.update!(opt, ps, gs)  # the network is update after each batch
         end
         Param_Network.Train_args.timings[epoch] = round(time() - Param_Network.Train_args.tInit;digits=6) # mus resolution
         _f1 = F1Score(dataTrain,model,device)
-        @info _f1  
         push!(trainf1,_f1)
         _f1 = F1Score(dataTest,model,device)
-        @info _f1  
         push!(testf1,_f1)
         # A Commenter si besoin #########################################################
         if epoch % Param_Network.Train_args.infotime == 0

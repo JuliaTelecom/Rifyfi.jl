@@ -160,7 +160,7 @@ function create_virtual_Database(Param_Data)
     X_trainTemp = tupTrain.bigMat
     X_testTemp = tupTest.bigMat
 
-    # --- Complete the matrix for each Tx  
+    # --- Complete the matrix label for each Tx  
     Y_trainTemp = zeros(Param_Data.nbTx,nbTrain)
     Y_testTemp = zeros(Param_Data.nbTx,nbTest)
     for iR =1 :1:Param_Data.nbTx
@@ -407,13 +407,9 @@ function reloadScenario(filename,RFF)
         _tmp = value["s_phaseNoise"]
         s_d_phaseNoise[ind] = initPhaseNoise(:Wiener,;σ2=_tmp["σ2"]) # FIXME Name in constrcutor (new version of RFImpairmentsModels)
         # Non linear PA
-        
         _tmp = value["s_nonLinearPA"]
         if RFF == "PA_memory" || RFF == "all_impairments_memory"
-            
-            #s_d_nonLinearPA = nothing
             s_d_nonLinearPA[ind] = initNonLinearPAmemory(;symbol_dict(_tmp)...)
-
         else
         s_d_nonLinearPA[ind] = initNonLinearPA(:Saleh;symbol_dict(_tmp)...)
         end
@@ -452,7 +448,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
     nb_symb_per_bursts = max_burst_size * chunk_size ÷ size_symb +1
     # We fill big matrix step by step: each burst create a mat_chunck
     cnt = 0
-    # --- Deduce final big matrixes, taking into accound potential rounding due to bursts
+    # Deduce final big matrixes, taking into accound potential rounding due to bursts
     bigMat      = zeros(Float32,chunk_size,2,nb_chunks*nb_radios)
     bigLabels   = zeros(nb_radios,nb_chunks*nb_radios)
     dict_out    = Dict()
@@ -489,11 +485,11 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
             if r==1
                 radio =1
             elseif r==2
-                radio =4  #62
+                radio =4  # 62
             elseif r==3
                 radio =5  # 75
             elseif r==4
-                radio =6 # 35
+                radio =6  # 35
             end 
 
             if E=="E1"
@@ -503,7 +499,7 @@ function generateDatabase(dict::AbstractDict{String,Any},E,S,C,RFF,name,nbSignau
             end
         else
             if E=="E1"
-                s_nonLinearPA        = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,1)
+                s_nonLinearPA    = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,1)
             else 
                 s_nonLinearPA    = instantiateImpairments(setup_nonLinearPA,s_d_nonLinearPA,dict,r)
             end 

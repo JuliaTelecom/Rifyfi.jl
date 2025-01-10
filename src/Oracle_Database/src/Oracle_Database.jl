@@ -10,11 +10,9 @@ include("../../Augmentation/src/Augmentation.jl")
 using .Augmentation
 include("Struct_data.jl")
 
-
 export create_X_Y_Oracle
 export Data_Oracle
-export  
-        getDistances,
+export  getDistances,
         getRadioIdent,
         loadSignal,
         getFilenames,
@@ -24,7 +22,7 @@ export setOraclecsv
 export loadCSV_Oracle
 """ 
 Create train and test dataset (here matrixes and not dataloader) for a given distance in feet. If the keyword "all" is used the train and test sets uses all distances.
-(X_train,Y_train,X_test,Y_test) = create_X_and_Y(distance)
+(X_train,Y_train,X_test,Y_test) = create_X_and_Y(Param_Data)
 """
 function create_X_Y_Oracle(Param_Data) 
     shuffle =true
@@ -45,7 +43,6 @@ function create_X_Y_Oracle(Param_Data)
     nbSeqD         = nbSeq ÷ nV # Number of sequence per radio per distance
     nbSeq          = nbSeqD * nV
     nbRadio        = Param_Data.nbTx #6#16 # Number of radio to be identified 
-   # batchSize      = 128
     trainTestRatio = Param_Data.pourcentTrain # 10% for test 
     # ----------------------------------------------------
     # --- Train and test sets
@@ -56,7 +53,6 @@ function create_X_Y_Oracle(Param_Data)
     permutation = randperm(nbSeqD)
     trainSet = permutation[ 1 : nbTrain]
     testSet  = permutation[ 1 + nbTrain : end]
-    # --- Load data
     cntTrain = 0
     cntTest  = 0
     X_train = zeros(Float32,Param_Data.Chunksize,2,nbTrain * nV * nbRadio) 
@@ -75,15 +71,13 @@ function create_X_Y_Oracle(Param_Data)
             # --- Load signal 
             signal = loadSignal(filename)
             # --- Train dataset 
-            # @turbo for n in eachindex(trainSet)
             for n in eachindex(trainSet)
                 cPos = trainSet[n]
                 X_train[:,1,cntTrain + n] = real( signal[ (cPos-1)*Param_Data.Chunksize .+ (1:Param_Data.Chunksize)] )
                 X_train[:,2,cntTrain + n] = imag( signal[ (cPos-1)*Param_Data.Chunksize .+ (1:Param_Data.Chunksize)] )
                 Y_train[cntLabel ,cntTrain + n] = 1
             end
-            # @turbo for n in eachindex(testSet)
-                for n in eachindex(testSet)
+            for n in eachindex(testSet)
                 cPos = testSet[n]
                 X_test[:,1,cntTest + n] = real( signal[ (cPos-1)*Param_Data.Chunksize .+ (1:Param_Data.Chunksize)]  )
                 X_test[:,2,cntTest + n] = imag( signal[ (cPos-1)*Param_Data.Chunksize .+ (1:Param_Data.Chunksize)]  )
@@ -160,11 +154,9 @@ function set_database_path(dbPath)
  
     @info "ORACLE database path is now at $dbPath.\n Reload Julia session to take the new path into account"
 end
-#function load_database_path()
-#    return @load_preference("databasePath","~/RF_Fingerprint/Database/KRI-16Devices-RawData/")
 
-#end
-const PATH_DATABASE = "/media/HDD/achillet/RF_Fingerprint/Database/KRI-16Devices-RawData/"#load_database_path()
+
+const PATH_DATABASE = "/media/HDD/achillet/RF_Fingerprint/Database/KRI-16Devices-RawData/"
 # --- Check it exists 
 function __init__()
     # --- Check the folder exists
@@ -345,28 +337,11 @@ end
 
 
 function loadCSV_Oracle(Param_Data)
-  
     nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals * size(Param_Data.distance,1))
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
-    #if augmentationType == "No_channel"
     suffix =  "$(Param_Data.distance)_$(Param_Data.Chunksize)"
     savepath = "./CSV_Files/Oracle/$(Param_Data.distance)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)"    
-    #=else  
-        channel = Param_Data.Augmentation_Value.Channel
-        channel_Test = Param_Data.Augmentation_Value.Channel_Test
-        nbAugment = Param_Data.Augmentation_Value.nb_Augment
-        savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
-        nbTrain = nbTrain * nbAugment
-        if augmentationType == "1channelTest"  
-            nbTest = nbTest * 1
-        elseif augmentationType == "same_channel"  
-            nbTest = nbTest * 1
-        else augmentationType == "augment"
-            nbTest = nbTest * 100
-        end 
-    end
-    =#
     # Labels 
     fileLabelTest= "$(savepath)/bigLabelsTest_$suffix.csv"
     Y_testTemp = Matrix(DataFrame(CSV.File(fileLabelTest;types=Int64,header=false)))

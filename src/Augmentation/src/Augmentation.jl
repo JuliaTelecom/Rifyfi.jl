@@ -18,10 +18,13 @@ function Add_Noise_Rxside(x,s_noise)
     return out
 end 
 
-
-
+""" Function to add propagation channel model on data 
+Takes in input the database and separate the data from the different emitters then define a burst composed of few (64) sequences of 256 IQ samples.
+Then depending of the augmentation ratio (pourcentAugment) different realisation channel are selected randomly and apply on the burst signal 
+At the end if pourcentAugment = 100 all the burst are repeated 100 times with always a different channel realisation.
+"""
 function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, pourcentAugment, nbRadioTx,seed,burstSize)
-    
+    # N = Number of signals per channel
     nbChunk = Int(size(bigMat,3)  )
     nbsignauxParRadio = Int(nbChunk/nbRadioTx)
     (snrRange,cfoRange,τₘ,nbTaps) = AugmentationParameters()
@@ -31,25 +34,22 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
     concaten!(concatVec,1:nbChunk,bigMat,ChunkSize)
     concatMat = reshape(concatVec,Int(ChunkSize*nbChunk/nbRadioTx),nbRadioTx)
     indice = 1 
-    #concatMat = bigMat #reshape(concatVec,Int(ChunkSize*nbChunk/nbRadioTx),nbRadioTx)
     @info "Create set with augmentation ..."     
 
     for iR = 1 : 1 : nbRadioTx 
         burstSizeTemp = burstSize
         # --- Signal associated to radio 
-        sig = @views concatMat[:,iR] # 256 * nbBurstParRadio = nbsignauxParRadio
-        nbBurstParRadio = Int(floor(size(sig,1)/(burstSizeTemp*ChunkSize)) +1)
+        sig = @views concatMat[:,iR] # changes the matrix format 
+        nbBurstParRadio = Int(floor(size(sig,1)/(burstSizeTemp*ChunkSize)) +1) # the number of burst is not alway an integer
         # --- Call the augmenting // feeding job 
-        # donné augmentée
+        # Create Vectors for augmented data (depends to pourcentAugment)
         X_mp = zeros(Float32,ChunkSize,2,Int(pourcentAugment*N))
         Y_mp = zeros(Float32,nbRadioTx,Int(pourcentAugment*N))
         # -- Working vector to augment data
         sigAugmented = zeros(ComplexF32,Int(ChunkSize*N))
-        # --- Iterative data augmentation chunk après chunk
+        # --- Iterative data augmentation chunk per chunk
         for iN = 1 : 1 : Int(nbBurstParRadio)
-
-            # Integrer le pourcentage d'augmentation 
-            if iN == nbBurstParRadio
+            if iN == nbBurstParRadio  # last burst, not always complete 
                 burstSizeTemp = nbsignauxParRadio- (iN-1)*burstSize
             end
             subSigAugmented = zeros(ComplexF32,Int(ChunkSize*burstSizeTemp))
@@ -62,7 +62,6 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
                 # First get unique impairment model
                 σ   = choose(snrRange)
                 f   = choose(cfoRange) / 5e6 # Normalized CFO, wrt sampling rate 
-                channel="multipath"
                 if channel == "multipath"
                     cir = getChannel(τₘ;model=:multipath,nbTaps)
                 elseif channel == "etu"
@@ -90,7 +89,6 @@ function Add_diff_Channel_train_test(bigMat, bigLabels, N, channel, ChunkSize, p
     X = Augmented_MatTemp
     Y = Augmented_Labels
     
-# --- Ajout de la Normalisation si besoin
 return (X,Y)
 end
 
@@ -110,7 +108,7 @@ function AugmentationParameters()
     return    snrRange,cfoRange,τₘ,nbTaps
 
 end
-"""Permet de concatener en le signal I + iQ """
+"""Concatenate the signal I + iQ """
 function concaten!(tmp_concat,indexList,bigMat,ChunkSize)
     j = 1
     for i in indexList
@@ -179,19 +177,17 @@ function getChannel(τ::Number;model=:none,nbTaps=1)
     elseif model == :randn
         # Pure random sequence, without profile
         cir = randn(ComplexF32,τ)
-    elseif model== :multipath 
+    elseif model== :multipath # READEME gives information about the multipath mode 
         nbTaps=1
         # Select the tap of interest 
         # We will have energy at this locations only
         id   = choose(collect(1:τ),nbTaps)
         # Populate the CIR
         cir = zeros(ComplexF32,τ)
-        Maxval=0.5 # bruit entre 1 -0.5 et 1+0.5
+        Maxval=0.5 # noise between 1-0.5 et 1+0.5
         sigma = Maxval/3 #ecart type du bruit 3sigma
         
         cir[id] .= (1 .-randn(Float32,nbTaps).*sigma) .* exp.(2im*π*rand(Float32,nbTaps)) # Max valeur 0.5
-   
-
     elseif model == :etu 
         channelModel = initChannel("constetu",2.4e9,5e6,0)
       #  Random.seed!()
@@ -240,13 +236,10 @@ end
 """
 function signalAugmentation(sigOut,chanel,augmentationType,sig::AbstractVector,h,cfo::Number,σ::Number)
     # --- Tx CFO 
- ##   addCFO!(subSigAugmented,ComplexF32.(sig),cfo,1,0)
     addCFO!(sigOut,sig,cfo,1,0)
     # --- Apply Channel model
     # Convolution and tail truncation model 
     #Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
-
-
     δ = length(h)÷2
 
     if mod(length(h),2)==1
@@ -254,15 +247,8 @@ function signalAugmentation(sigOut,chanel,augmentationType,sig::AbstractVector,h
     else
         sigChan = DSP.conv(sigOut,h)[1+δ:end-δ+1]
     end 
-    
-
     # --- AWGN 
     sigOut,_ = addNoise(ComplexF32.(sigChan),σ)
-
- 
- #  addNoise!(sigOut,ComplexF32.(sigChan),σ)
-   # sigOut=sigChan
-##   y= addNoise!(ComplexF32.(subSigAugmented),ComplexF32.(sigChan),σ)
     return sigOut
 end
 
