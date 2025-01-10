@@ -3,17 +3,15 @@
 [![Build Status](https://github.com/achillet/Augmentation.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/achillet/Augmentation.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 
-The Module Augmentation define some function to create a data augmentation.
-The objective is to add some channel model on the signals. This Modules can be used with synthetic or real data. 
+The Augmentation module defines some function to create a data augmentation.
+The aim is to add some channel model to the signals. This module can be used with synthetic or real data. 
 
-The parameter N represents the augmentation factor. 
-    If N = 1 the function return a matrix wich has the same size as the input matrix and only applying channel model on data.
-    If N = 2 the function return a matrix which is the double of the input matrix and apply two different channel.
+The parameter N is the augmentation factor. 
+    If N = 1, the function returns a matrix that has the same size as the input matrix and only applies the channel model to the data.
+    If N = 2, the function returns a matrix that is double the size of the input matrix and applies two different channels.
 
 
-
-The **multipath** mode is the one that we use in our experiment. In the case it a 
-
+The **multipath** mode is the one that we use in our experiment. 
 
 The channel model implemented in our database generator for "multipath" mode is a wireless flat-fading
 transmission with random delay spread. The maximum of the delay spread is set at 36,
@@ -36,8 +34,6 @@ fading channels can been countered. To achieve this, we generate different chann
 to a few consecutive sequences of 256 IQ samples, with each channel having a different
 random power and delay spread.
 
-The ETU and EVA are two different models, specified with different delay profiles: the Extended
-Vehicular A (EVA) model and the Extended Typical Urban (ETU) model [1]. EVA model
-represents a medium delay spread environment while the ETU model is a low delay spread
-environment. For both models we define 8 taps and the maximum of the delay spread is
-set as 36, which corresponds to the CP of the OFDM considered here. Both EVA and ETU are not already test with RiFyFi.
+
+ETU and EVA are two different models specified with different delay profiles: the Extended Vehicular A (EVA) model and the Extended Typical Urban (ETU) model [1]. The EVA model
+represents a medium delay environment, while the ETU model represents a low delay environment. For both models, we define 8 taps and the maximum delay spread is set to 36, which corresponds to the CP of the OFDM considered here. Both EVA and ETU are not yet tested with RiFyFi.
