@@ -1,4 +1,10 @@
 
+# ----------------------------------------------
+# This script can be used with experimental dataset. 
+# The dataset is not yet online but if you want an open acces, don't hesitate to contact us.
+# mail address in the main README
+# ----------------------------------------------
+
 using RiFyFi
 using Infiltrator
 using RFImpairmentsModels 

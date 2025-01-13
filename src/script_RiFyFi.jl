@@ -20,20 +20,21 @@ include("Results/src/Results.jl")
 using .Results
 
 
+
 ########### Synthetic Data struct ###########
 name = "5_pourcent"
 nameModel = name
-nbTx = 6
-nbSignals = 10000
-Chunksize = 256
+nbTx = 6            # Number of transmitters
+nbSignals = 10000   # number of signals per transmitters
+Chunksize = 256     # number of IQ samples per signals
 features= "IQsamples"
-S = "S1"
-E = "E3"
-C = "C2_20dB"
-RFF = "all_impairments"
-Normalisation = true
-pourcentTrain =0.9
-configuration  = "scenario"
+S = "S1"            # Use S1 for modelling a Preamble mode, S2 for MAC address and S3 for payload mode
+E = "E3"            # Use E3 for adding fingerprint 
+C = "C2_20dB"       # Use C1 for perfect SNR, C2_0dB - C2_30dB to add Gaussian noise
+RFF = "all_impairments"     # Use all_impairments to modeled the complete chaine, or use PA to model only the Power Amplifier, PN for Phase Noise, imbalance for IQ imbalance or cfo for carrier frequency offset.
+Normalisation = true        # Use true to normalize the database 
+pourcentTrain =0.9          # 90 % for train and 10% for test 
+configuration  = "scenario" # Use nothing to create random scenario, or use "scenario" to load a pre create scenario 
 seed_data = 1234
 seed_model = 2345
 if E == "E1" || E == "E2"
