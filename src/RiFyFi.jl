@@ -37,6 +37,9 @@ using .WiSig_Database
 
 include("Experiment_Database/src/Experiment_Database.jl")
 using .Experiment_Database
+
+include("Results/src/Results.jl")
+using .Results
 # ----------------------------------------------------
 # --- Loading utility functions
 # ---------------------------------------------------- 
