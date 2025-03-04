@@ -412,7 +412,7 @@ function reloadScenario(filename,RFF)
         if RFF == "PA_memory" || RFF == "all_impairments_memory"
             s_d_nonLinearPA[ind] = initNonLinearPAmemory(;symbol_dict(_tmp)...)
         else
-            s_d_nonLinearPA[ind] = initNonLinearPA(:Saleh;_tmp["β_AM"],_tmp["α_AM"],_tmp["β_PM"],_tmp["α_PM"])
+            s_d_nonLinearPA[ind] = initNonLinearPA(:Saleh;β_AM=_tmp["β_AM"],α_AM=_tmp["α_AM"],β_PM=_tmp["β_PM"],α_PM=_tmp["α_PM"])
 
         #s_d_nonLinearPA[ind] = initNonLinearPA(:Saleh;symbol_dict(_tmp)...)
         end
