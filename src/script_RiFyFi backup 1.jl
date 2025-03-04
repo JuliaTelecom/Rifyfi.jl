@@ -25,7 +25,7 @@ using .Results
 name = "5_pourcent"
 nameModel = name
 nbTx = 6            # Number of transmitters
-nbSignals = 2000   # number of signals per transmitters
+nbSignals = 10000   # number of signals per transmitters
 Chunksize = 256     # number of IQ samples per signals
 features= "IQsamples"
 S = "S1"            # Use S1 for modelling a Preamble mode, S2 for MAC address and S3 for payload mode
@@ -66,11 +66,11 @@ Augmentation_Value = RiFyFi_VDG.Data_Augmented(;augmentationType,Channel,Channel
 
 ########### Args Network struct ###########
 
-η = 1e-5           # learning rate e-5
+η = 1e-4           # learning rate e-5
 dr = 0.25
 #λ = 0               # L2 regularizer param, implemented as weight decay
-batchsize = 64     # batch size
-epochs = 2        # number of epochs
+batchsize = 600     # batch size
+epochs = 1000        # number of epochs
 #seed = 12           # set seed > 0 for reproducibility
 use_cuda = true     # if true use cuda (if available)
 #infotime = 1 	    # report every `infotime` epochs
@@ -100,7 +100,7 @@ savepathbson=""
 # Creation of the data structure with the information of the dataset
 Param_Data = RiFyFi_VDG.Data_Synth(name,nameModel,nbTx, NbSignals, Chunksize,features,S,E,C,RFF,Normalisation,pourcentTrain,configuration,seed_data,seed_model,seed_dataTest,seed_modelTest,Augmentation_Value)
 # Train and test Datasets are created and saved in CSV files
-RiFyFi_VDG.setSynthetiquecsv(Param_Data)
+#RiFyFi_VDG.setSynthetiquecsv(Param_Data)
 
 
 # Creation of the Network structure with the information of the network
