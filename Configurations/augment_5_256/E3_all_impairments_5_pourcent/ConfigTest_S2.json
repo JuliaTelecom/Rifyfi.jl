@@ -1,10 +1,10 @@
 {
  "nb_radios": 6,
  "chunk_size": 256,
- "nb_chunks": 2000,
+ "nb_chunks": 1000,
  "always_sync": false,
- "seed_data": 1234,
- "seed_models": 2345,
+ "seed_data": 123456,
+ "seed_models": 15987654321,
  "max_burst_size": 64,
  "physical_layer": "hadoc",
  "tx_policy": "random",
@@ -54,7 +54,7 @@
   -8,
   2
  ],
- "awgn_snr_base": 20,
+ "awgn_snr_base": 30,
  "awgn_range": [
   0,
   0
