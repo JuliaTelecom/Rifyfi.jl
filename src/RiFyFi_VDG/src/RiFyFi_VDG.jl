@@ -289,6 +289,7 @@ end
 
 """ Function that load data from the CSV file for Synthetic database """
 function loadCSV_Synthetic(Param_Data)
+    @info "Loading Data"
     augmentationType = Param_Data.Augmentation_Value.augmentationType
     ChunkSize = Param_Data.Chunksize
     Param_Data.nbTx = Param_Data.nbTx
@@ -318,6 +319,7 @@ function loadCSV_Synthetic(Param_Data)
         end 
     end 
     # Labels 
+    @info "Before loading Data"
     fileLabelTest= "$(savepath)/bigLabelsTest.csv"
     Y_testTemp = Matrix(DataFrame(CSV.File(fileLabelTest;types=Int64,header=false)))
     fileLabelTrain= "$(savepath)/bigLabelsTrain.csv"
@@ -331,7 +333,7 @@ function loadCSV_Synthetic(Param_Data)
     X_test = zeros(Float32, Param_Data.Chunksize,2,nbTest)
     Y_train = zeros(Param_Data.nbTx,nbTrain)
     Y_test = zeros(Param_Data.nbTx,nbTest)
-
+    @info "After Loading Data"
     for i in 1:size(X_trainTemp)[1]  
         X_train[:,1,i]=X_trainTemp[i,1:Param_Data.Chunksize]
         X_train[:,2,i]=X_trainTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
@@ -346,7 +348,9 @@ function loadCSV_Synthetic(Param_Data)
     for i in 1:size(Y_testTemp)[1]  
         Y_test[Y_testTemp[i]+1,i]=1
     end 
+      @info "return Data"
     return (X_train,Y_train,X_test,Y_test)
+
 end 
 
 
