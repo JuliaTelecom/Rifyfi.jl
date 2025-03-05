@@ -72,6 +72,8 @@ end
 return the network model with train weight, the performance of the network and the training parameters 
 """
 function customTrain!(dataTrain,dataTest,savepath,Param_Network)
+    @info "begin Custom Train"
+
     # ----------------------------------------------------
     # --- CPU or GPU
     # ---------------------------------------------------- 
@@ -87,7 +89,8 @@ function customTrain!(dataTrain,dataTest,savepath,Param_Network)
     end
 
     # --- Loading model
-   
+    @info "Load model"
+
     model = Param_Network.model |> device
     
     @info "Chosen NN model: $(num_params(model)) trainable params"    
