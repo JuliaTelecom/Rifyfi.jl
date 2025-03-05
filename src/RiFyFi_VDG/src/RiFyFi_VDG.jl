@@ -407,7 +407,6 @@ function reloadScenario(filename,RFF)
         _tmp = value["s_phaseNoise"]
         s_d_phaseNoise[ind] = initPhaseNoise(:Wiener,;σ2=_tmp["σ2"]) # FIXME Name in constrcutor (new version of RFImpairmentsModels)
         # Non linear PA
-        @infiltrate
         _tmp = value["s_nonLinearPA"]
         if RFF == "PA_memory" || RFF == "all_impairments_memory"
             s_d_nonLinearPA[ind] = initNonLinearPAmemory(;symbol_dict(_tmp)...)
