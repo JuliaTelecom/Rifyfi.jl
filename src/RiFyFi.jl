@@ -132,13 +132,13 @@ function init(Param_Data,Param_Network)
     # ---------------------------------------------------- 
     @info "Init Network $(Param_Network.Networkname)"
     if Param_Network.Networkname == "AlexNet"
-        (nn,loss)= initAlexNet(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+        (nn,loss)= initAlexNet(Param_Data.Chunksize,Param_Network.NbClass,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname=="NewCNN"
-        (nn,loss)= initNewCNN(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+        (nn,loss)= initNewCNN(Param_Data.Chunksize,Param_Network.NbClass,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname == "GDA"
-        (nn,loss)= initGDA(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+        (nn,loss)= initGDA(Param_Data.Chunksize,Param_Network.NbClass,Param_Network.Train_args.dr)
     elseif Param_Network.Networkname=="WiSig"
-        (nn,loss)= initWiSig(Param_Data.Chunksize,Param_Data.nbTx,Param_Network.Train_args.dr)
+        (nn,loss)= initWiSig(Param_Data.Chunksize,Param_Network.NbClass,Param_Network.Train_args.dr)
     end 
     Param_Network.loss = loss
     Param_Network.model = nn

@@ -77,7 +77,6 @@ function create_bigMat_Labels_Tx(new_bigLabels)
             end
         end
     end
-
     return bigLabels
 end
 
