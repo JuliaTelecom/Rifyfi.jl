@@ -82,6 +82,79 @@ function main(Param_Data,Param_Network,Type_Resuts,savepathbson,Param_Data_test,
 end 
 
 
+
+function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savepathbson="")
+    
+    if Param_Network.Train_args.use_cuda ==true 
+        hardware1 = "GPU"
+    else 
+        hardware1 ="CPU"
+    end 
+    if savepathbson == ""
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+            if Param_Data.permutation == true
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_permut/$(hardware1)"
+            elseif Param_Data.noise==nothing 
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)/$(hardware1)"
+            else 
+                savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_$(Param_Data.noise)/$(hardware1)"
+
+            end        
+        else 
+            savepathbson = "run/Experiment/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)/$(Param_Data.nbSignals)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)/$(hardware1)"
+        end 
+    end 
+
+
+  
+    allAcc = Float64[]
+        
+    res =RiFyFi_IdF.loadCNN("$(savepathbson)/model_seed_$(Param_Network.Seed_Network)_dr$(Param_Network.Train_args.dr).bson")
+
+    model = res.model
+    testmode!(model, true)  # We are in test mode, with no dropout 
+    (moy,std_val) = (nothing,nothing)
+    allAccuracy = Float64[]
+   
+    (_,_,X_test,Y_test) =Experiment_Database.loadCSV_Exp(Param_Data_test) 
+
+    
+    if Param_Network.Train_args.use_cuda
+        device= gpu
+    else
+        device =cpu
+    end
+    dataTest  = Flux.Data.DataLoader((X_test, Y_test), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
+    l̂,l = inference(model,dataTest,device)
+    acc = getAccuracy(l̂,l) 
+    @info "acc" acc
+    confMatrix = confusionMatrix(l̂,l,Param_Data.nbTx)
+    plt = plotConfusionMatrix(confMatrix )
+
+    if Param_Data.permutation==true 
+        savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)_permut/"
+    else 
+        savepath ="Results/Exp/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)_$(Param_Network.Networkname)_$(Param_Data.Type_of_sig)/RunTrain$(Param_Data.run)_RunTest$(Param_Data_test.run)_Test$(Param_Data_test.Test)_$(Param_Data_test.noise)/"
+    end 
+    !ispath(savepath) && mkpath(savepath)
+        Temp=zeros(1,Param_Data.nbTx)
+        if Param_Data.Augmentation_Value.augmentationType == "No_channel"
+            file="$(savepath)/confMatrix_$(Param_Data.nbSignals)_$(Param_Data.name)_seed_$(Param_Network.Seed_Network).csv"
+        else 
+            file="$(savepath)/confMatrix_$(Param_Data.nbSignals)_$(Param_Data.name)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)_seed_$(Param_Network.Seed_Network).csv"
+        end 
+        open(file,"w") do io
+            for i in 0:size(confMatrix,1)-1
+                Temp[1,:]  = round.(confMatrix[i+1,:]*100;digits=1)
+                writedlm(io,[vcat((Temp))],';')  #Ecriture Re-Im
+            end 
+        end
+     MainPlottingMatrix_Latex(file,Param_Data.nbTx)
+
+   return acc
+end
+
+
 #=
 function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson="")
     
