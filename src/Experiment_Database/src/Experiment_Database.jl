@@ -211,7 +211,7 @@ end
 
 
 function loadCSV_Exp(Param_Data)
-    nbChunks=Int(Param_Data.nbTx*(Param_Data.nbSignals -1))
+    nbChunks=Int(Param_Data.nbTx*(Param_Data.nbSignals - 1000))
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
     #if augmentationType == "No_channel"
