@@ -430,9 +430,7 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
     (moy,std_val) = (nothing,nothing)
     allAccuracy = Float64[]
    
-    (_,_,X_test,Y_test) =Experiment_Database.loadCSV_Exp(Param_Data_test) 
-
-    #(X_test_2,Y_test_2,_,_) =Experiment_Database.loadCSV_Exp(Param_Data_test) 
+    (X_test,Y_test) =Experiment_Database.loadCSV_Exp_Test(Param_Data_test) 
 
     
     if Param_Network.Train_args.use_cuda
@@ -467,11 +465,6 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
         end
      MainPlottingMatrix_Latex(file,Param_Data.nbTx)
 
-
-   # dataTest_2  = Flux.Data.DataLoader((X_test_2, Y_test_2), batchsize = Param_Network.Train_args.batchsize, shuffle = true )
-   # l̂,l = inference(model,dataTest_2,device)
-   # acc2 = getAccuracy(l̂,l) 
-   # @info "acc2" acc2
    return acc
 end
 #=
