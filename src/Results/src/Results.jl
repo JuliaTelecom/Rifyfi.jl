@@ -116,7 +116,7 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
     (moy,std_val) = (nothing,nothing)
     allAccuracy = Float64[]
    
-    (_,_,X_test,Y_test) =Experiment_Database.loadCSV_Exp(Param_Data_test) 
+    (_,_,X_test,Y_test) =Experiment_Database.loadCSV_Exp_Test(Param_Data_test) 
 
     
     if Param_Network.Train_args.use_cuda
