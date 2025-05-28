@@ -19,7 +19,7 @@ export setExpcsv
 
 export loadCSV_Exp
 
-
+export loadCSV_Exp_Test
 
 
 
@@ -271,6 +271,48 @@ function loadCSV_Exp(Param_Data)
     end 
     return (X_train,Y_train,X_test,Y_test)
 end 
+
+
+
+function loadCSV_Exp_Test(Param_Data)
+    nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals )
+    nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
+    nbTest = nbChunks - nbTrain
+    #if augmentationType == "No_channel"
+    suffix =  "$(Param_Data.Type_of_sig)_$(Param_Data.Chunksize)"
+    if Param_Data.permutation == true
+    savepath = "./CSV_Files/Experiment/Run$(Param_Data.run)_Test$(Param_Data.Test)_permut_$(Param_Data.nbTx)_$(Param_Data.nbSignals)"    
+    else 
+        if Param_Data.noise == nothing
+            savepath = "./CSV_Files/Experiment/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)"    
+        else 
+            savepath = "./CSV_Files/Experiment/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_$(Param_Data.noise)"    
+        end 
+    end 
+    
+    
+    # Labels 
+    fileLabelTest= "$(savepath)/bigLabelsTest_$suffix.csv"
+    Y_testTemp = Matrix(DataFrame(CSV.File(fileLabelTest;types=Int64,header=false)))
+    # Data 
+    fileDataTest= "$(savepath)/bigMatTest_$suffix.csv"
+    X_testTemp = Matrix(DataFrame(CSV.File(fileDataTest;types=Float32,header=false)))
+    X_test = zeros(Float32, Param_Data.Chunksize,2,nbTest)
+    Y_test = zeros(Param_Data.nbTx,nbTest)
+
+ 
+    for i in 1:size(X_testTemp)[1]  
+        X_test[:,1,i]=X_testTemp[i,1:Param_Data.Chunksize]
+        X_test[:,2,i]=X_testTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
+    end 
+
+    for i in 1:size(Y_testTemp)[1]  
+        Y_test[Y_testTemp[i]+1,i]=1
+    end 
+    return (X_test,Y_test)
+end 
+
+
 
 function setExpcsv(Param_Data)
 
