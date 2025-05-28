@@ -240,18 +240,18 @@ function loadCSV_Exp(Param_Data)
     Y_train = zeros(Param_Data.nbTx,nbTrain)
     Y_test = zeros(Param_Data.nbTx,nbTest)
 
-    for i in 1:(size(X_trainTemp)[1]-1)  
+    for i in 1:(size(X_trainTemp)[1])  
         X_train[:,1,i]=X_trainTemp[i,1:Param_Data.Chunksize]
         X_train[:,2,i]=X_trainTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
-    for i in 1:(size(X_testTemp)[1]-1)  
+    for i in 1:(size(X_testTemp)[1])  
         X_test[:,1,i]=X_testTemp[i,1:Param_Data.Chunksize]
         X_test[:,2,i]=X_testTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
-    for i in 1:(size(Y_trainTemp)[1] -1) 
+    for i in 1:(size(Y_trainTemp)[1] ) 
         Y_train[Y_trainTemp[i]+1,i]=1
     end 
-    for i in 1:(size(Y_testTemp)[1]  -1)
+    for i in 1:(size(Y_testTemp)[1] )
         Y_test[Y_testTemp[i]+1,i]=1
     end 
     return (X_train,Y_train,X_test,Y_test)
