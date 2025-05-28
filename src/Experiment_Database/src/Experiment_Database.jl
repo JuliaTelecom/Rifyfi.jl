@@ -261,6 +261,7 @@ end
 
 
 function loadCSV_Exp_Test(Param_Data)
+    @info "Load Test"
     nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals )
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
