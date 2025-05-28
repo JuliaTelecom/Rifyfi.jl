@@ -211,7 +211,7 @@ end
 
 
 function loadCSV_Exp(Param_Data)
-    nbChunks=Int(Param_Data.nbTx*Param_Data.nbSignals )
+    nbChunks=Int(Param_Data.nbTx*(Param_Data.nbSignals -1))
     nbTrain = Int(round(Param_Data.pourcentTrain*nbChunks))
     nbTest = nbChunks - nbTrain
     #if augmentationType == "No_channel"
@@ -225,21 +225,6 @@ function loadCSV_Exp(Param_Data)
             savepath = "./CSV_Files/Experiment/Run$(Param_Data.run)_Test$(Param_Data.Test)_$(Param_Data.nbTx)_$(Param_Data.nbSignals)_$(Param_Data.noise)"    
         end 
     end 
-    #=else  
-        channel = Param_Data.Augmentation_Value.Channel
-        channel_Test = Param_Data.Augmentation_Value.Channel_Test
-        nbAugment = Param_Data.Augmentation_Value.nb_Augment
-        savepath = "./CSV_Files/$(Param_Data.Augmentation_Value.augmentationType)_$(Param_Data.nbTx)_$(Param_Data.Chunksize)/$(Param_Data.E)_$(Param_Data.S)/$(Param_Data.E)_$(Param_Data.S)_$(Param_Data.C)_$(Param_Data.RFF)_$(Param_Data.nbSignals)_$(Param_Data.nameModel)_$(Param_Data.Augmentation_Value.Channel)_$(Param_Data.Augmentation_Value.Channel_Test)_nbAugment_$(Param_Data.Augmentation_Value.nb_Augment)"
-        nbTrain = nbTrain * nbAugment
-        if augmentationType == "1channelTest"  
-            nbTest = nbTest * 1
-        elseif augmentationType == "same_channel"  
-            nbTest = nbTest * 1
-        else augmentationType == "augment"
-            nbTest = nbTest * 100
-        end 
-    end
-    =#
     # Labels 
     fileLabelTest= "$(savepath)/bigLabelsTest_$suffix.csv"
     Y_testTemp = Matrix(DataFrame(CSV.File(fileLabelTest;types=Int64,header=false)))
@@ -255,18 +240,18 @@ function loadCSV_Exp(Param_Data)
     Y_train = zeros(Param_Data.nbTx,nbTrain)
     Y_test = zeros(Param_Data.nbTx,nbTest)
 
-    for i in 1:size(X_trainTemp)[1]  
+    for i in 1:(size(X_trainTemp)[1]-1)  
         X_train[:,1,i]=X_trainTemp[i,1:Param_Data.Chunksize]
         X_train[:,2,i]=X_trainTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
-    for i in 1:size(X_testTemp)[1]  
+    for i in 1:(size(X_testTemp)[1]-1)  
         X_test[:,1,i]=X_testTemp[i,1:Param_Data.Chunksize]
         X_test[:,2,i]=X_testTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
-    for i in 1:size(Y_trainTemp)[1]  
+    for i in 1:(size(Y_trainTemp)[1] -1) 
         Y_train[Y_trainTemp[i]+1,i]=1
     end 
-    for i in 1:size(Y_testTemp)[1]  
+    for i in 1:(size(Y_testTemp)[1]  -1)
         Y_test[Y_testTemp[i]+1,i]=1
     end 
     return (X_train,Y_train,X_test,Y_test)
@@ -301,12 +286,12 @@ function loadCSV_Exp_Test(Param_Data)
     Y_test = zeros(Param_Data.nbTx,nbTest)
 
  
-    for i in 1:size(X_testTemp)[1]  
+    for i in 1:(size(X_testTemp)[1]-1)  
         X_test[:,1,i]=X_testTemp[i,1:Param_Data.Chunksize]
         X_test[:,2,i]=X_testTemp[i,Param_Data.Chunksize+1:Param_Data.Chunksize+Param_Data.Chunksize]
     end 
 
-    for i in 1:size(Y_testTemp)[1]  
+    for i in 1:(size(Y_testTemp)[1]-1)  
         Y_test[Y_testTemp[i]+1,i]=1
     end 
     return (X_test,Y_test)
