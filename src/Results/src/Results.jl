@@ -82,7 +82,7 @@ function main(Param_Data,Param_Network,Type_Resuts,savepathbson,Param_Data_test,
 end 
 
 
-
+#=
 function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savepathbson="")
     
     if Param_Network.Train_args.use_cuda ==true 
@@ -154,7 +154,7 @@ function Confusion_Matrix_CSV_Exp(Param_Data,Param_Network,Param_Data_test,savep
    return acc
 end
 
-
+=#
 #=
 function F1_score_Synth(Param_Data,Param_Network,Table_Seed_Network,savepathbson="")
     
